@@ -9,17 +9,27 @@ pygame.display.set_caption("First Game")
 player_image = pygame.image.load('assets\images\Ship.png')
 
 
-class circle_projectile(object):
-    def __init__(self, x, y, color, vel, radius, is_enemy):
+class projectile(object):
+    def __init__(self, x, y, color, vel, is_enemy):
         self.x = x
         self.y = y
-        self.color= color
+        self.color = color
         self.vel = vel
-        self.radius = radius
         self.is_enemy = is_enemy
+
+class circle_projectile(projectile):
+    def __init__(self, radius, *args):
+        self.radius = radius
+        super().__init__(*args)
 
     def draw(self, win):
         pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
+
+class rect_projectile(projectile):
+    def __init__(self, width, height, *args):
+        self.radius = width
+        self.height =height
+        super().__init__(*args)
 
 class Player:
     def __init__(self, x, y, width, height, velocity, max_cooldown):
@@ -55,8 +65,11 @@ def handlePlayerInput():
     if keys[pygame.K_RIGHT] and player.x < win_width - player.width:
         player.x += player.velocity
     if keys[pygame.K_SPACE] and player.cooldown == 0:
-        bullets.append(circle_projectile(round(player.x + player.width // 2),
-            round(player.y), (0, 200, 0), 5, 6, True))
+        bullets.append(circle_projectile(6,round(player.x + player.width // 2),
+            round(player.y), (0, 200, 0), 5, True))
+        print("penis")
+        print("x ", bullets[0].x, "y ", bullets[0].y)
+        print(bullets[0].color)
         player.cooldown = player.max_cooldown
     if player.cooldown > 0:
         player.cooldown -= 1
