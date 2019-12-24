@@ -69,6 +69,7 @@ class Enemy:
         self.score = 0
         self.counter = 0
         self.image_id = 1
+        self.direction = "right"
 
     def draw(self, win):
         if (self.counter >= self.anim_speed):
@@ -83,7 +84,20 @@ class Enemy:
         win.blit(self.enemy_image, (self.x, self.y))
 
     def move(self, win):
-        self.y += self.vel
+        if (self.direction == "right"):
+            if (self.x + self.width < win_width):
+                self.x += self.vel
+            else:
+                self.direction = "left"
+                self.y += self.height
+        elif (self.direction == "left"):
+            if (self.x >= 0):
+                self.x -= self.vel
+            else:
+                self.direction = "right"
+                self.y += self.height
+        if (self.y >= win_height):
+            pygame.quit()
 
     def shoot(self):
         pass
@@ -140,7 +154,7 @@ bullets = []
 enemies = []
 player_bullet = None
 # Gameloop
-enemies.append(AlphaEnemy(100, 100, 16, 16))
+enemies.append(AlphaEnemy(100, 100, 48, 32))
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
