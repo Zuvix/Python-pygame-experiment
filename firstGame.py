@@ -59,21 +59,31 @@ class Player:
 
 
 class Enemy:
-    def __init__(self, x, y, width, height, vel, life):
+    def __init__(self, x, y, width, height):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.vel = vel
-        self.life = life
+        self.vel = 2
+        self.anim_speed = 30
+        self.score = 0
+        self.counter = 0
+        self.image_id = 1
 
     def draw(self, win):
-        move()
+        if (self.counter >= self.anim_speed):
+            self.counter = 0
+            if (self.image_id == 1):
+                self.image_id = 2
+                self.enemy_image = self.enemy_image2
+            else:
+                self.image_id = 1
+                self.enemy_image = self.enemy_image1
+        self.counter += 1
         win.blit(self.enemy_image, (self.x, self.y))
 
     def move(self, win):
-        if self.y < 500:
-            self.y += self.vel
+        self.y += self.vel
 
     def shoot(self):
         pass
@@ -85,6 +95,8 @@ class AlphaEnemy(Enemy):
 
     def __init__(self, *args):
         super().__init__(*args)
+        self.score = 10
+        self.enemy_image = self.enemy_image1
 
 
 def redraw_game_window():
@@ -94,6 +106,8 @@ def redraw_game_window():
         bullet.draw(win)
     if player_bullet != None:
         player_bullet.draw(win)
+    for enemy in enemies:
+        enemy.draw(win)
     pygame.display.update()
 
 
@@ -123,8 +137,10 @@ player = Player(win_width // 2 - 50, win_height - 32, 60, 32, 5, True)
 run = True
 clock = pygame.time.Clock()
 bullets = []
+enemies = []
 player_bullet = None
 # Gameloop
+enemies.append(AlphaEnemy(100, 100, 16, 16))
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -141,6 +157,11 @@ while run:
             bullet.y += bullet.vel
         else:
             bullets.pop(bullets.index(bullet))
+    for enemy in enemies:
+        if enemy.y < win_height:
+            enemy.move(win)
+        else:
+            enemies.pop(enemies.index(enemy))
     redraw_game_window()
     clock.tick(60)
 pygame.quit()
