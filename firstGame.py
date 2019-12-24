@@ -89,13 +89,13 @@ class Enemy:
                 self.x += self.vel
             else:
                 self.direction = "left"
-                self.y += self.height
+                self.y += self.height + 10
         elif (self.direction == "left"):
             if (self.x >= 0):
                 self.x -= self.vel
             else:
                 self.direction = "right"
-                self.y += self.height
+                self.y += self.height + 10
         if (self.y >= win_height):
             pygame.quit()
 
@@ -147,6 +147,15 @@ def handle_player_input():
         player.cooldown -= 1
 '''
 
+
+def spawn_enemies():
+    x = 0
+    y = 0
+    for d in range(3):
+        for i in range(8):
+            enemies.append(AlphaEnemy(x + i * 60, y + d * 42, 48, 32))
+
+
 player = Player(win_width // 2 - 50, win_height - 32, 60, 32, 5, True)
 run = True
 clock = pygame.time.Clock()
@@ -154,7 +163,7 @@ bullets = []
 enemies = []
 player_bullet = None
 # Gameloop
-enemies.append(AlphaEnemy(100, 100, 48, 32))
+spawn_enemies()
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
