@@ -105,6 +105,8 @@ class AlphaEnemy(Enemy):
         super().__init__(*args)
         self.score = 10
         self.enemy_image = self.enemy_image1
+        set_color(self.enemy_image1, pygame.Color(0, 0, 255))
+        set_color(self.enemy_image2, pygame.Color(0, 0, 255))
 
 
 class BetaEnemy(Enemy):
@@ -129,6 +131,15 @@ class GammaEnemy(Enemy):
         super().__init__(*args)
         self.score = 30
         self.enemy_image = self.enemy_image1
+
+
+def set_color(img, color):
+    for x in range(img.get_width()):
+        for y in range(img.get_height()):
+            if (
+                    img.get_at((x, y)).a > 20
+            ):  #color.a = img.get_at((x, y)).a  # Preserve the alpha value.
+                img.set_at((x, y), color)  # Set the color of the pixel.
 
 
 def redraw_game_window():
