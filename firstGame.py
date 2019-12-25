@@ -164,15 +164,15 @@ def spawn_enemies():
     for d in range(1):
         for i in range(11):
             enemies.append(
-                GammaEnemy(x + i * 46, y + d * 38 + 8, 32, 24, d * 15))
+                GammaEnemy(x + i * 48, y + d * 38 + 8, 32, 24, d * 15))
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
-                BetaEnemy(x + i * 46, y + d * 38 + 8, 32, 24, d * 15))
+                BetaEnemy(x + i * 48, y + d * 38 + 8, 32, 24, d * 15))
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
-                AlphaEnemy(x + i * 46, y + d * 38 + 8, 32, 24, d * 15))
+                AlphaEnemy(x + i * 48, y + d * 38 + 8, 32, 24, d * 15))
 
 
 player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 5)
