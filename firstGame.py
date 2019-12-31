@@ -1,12 +1,13 @@
 import pygame
-
+import os
 # Init Section
+os.environ['SDL_VIDEO_CENTERED'] = '1'
 pygame.init()
 win_height = 600
 win_width = 800
 win = pygame.display.set_mode((win_width, win_height))
-pygame.display.set_caption("First Game")
-
+pygame.display.set_caption("Space Invaders by Zuvix")
+print (os.getcwd())
 
 class Projectile(object):
     def __init__(self, x, y, color, vel, is_enemy):
@@ -44,7 +45,7 @@ class RectProjectile(Projectile):
 
 
 class Player:
-    player_image = pygame.image.load('assets\images\Ship.png')
+    player_image = pygame.image.load(os.path.join('assets','images','Ship.png'))
     player_image = pygame.transform.scale(player_image, (45, 24))
 
     def __init__(self, x, y, width, height, vel):
@@ -96,8 +97,8 @@ class Enemy:
 
 
 class AlphaEnemy(Enemy):
-    enemy_image1 = pygame.image.load('assets\images\InvaderA1.png')
-    enemy_image2 = pygame.image.load('assets\images\InvaderA2.png')
+    enemy_image1 = pygame.image.load(os.path.join('assets','images','InvaderA1.png'))
+    enemy_image2 = pygame.image.load(os.path.join('assets','images','InvaderA2.png'))
     enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
     enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
 
@@ -110,8 +111,8 @@ class AlphaEnemy(Enemy):
 
 
 class BetaEnemy(Enemy):
-    enemy_image1 = pygame.image.load('assets\images\InvaderB1.png')
-    enemy_image2 = pygame.image.load('assets\images\InvaderB2.png')
+    enemy_image1 = pygame.image.load(os.path.join('assets','images','InvaderB1.png'))
+    enemy_image2 = pygame.image.load(os.path.join('assets','images','InvaderB2.png'))
     enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
     enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
 
@@ -124,8 +125,8 @@ class BetaEnemy(Enemy):
 
 
 class GammaEnemy(Enemy):
-    enemy_image1 = pygame.image.load('assets\images\InvaderC1.png')
-    enemy_image2 = pygame.image.load('assets\images\InvaderC2.png')
+    enemy_image1 = pygame.image.load(os.path.join('assets','images','InvaderC1.png'))
+    enemy_image2 = pygame.image.load(os.path.join('assets','images','InvaderC2.png'))
     enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
     enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
 
