@@ -7,7 +7,8 @@ win_height = 600
 win_width = 800
 win = pygame.display.set_mode((win_width, win_height))
 pygame.display.set_caption("Space Invaders by Zuvix")
-print (os.getcwd())
+print(os.getcwd())
+
 
 class Projectile(object):
     def __init__(self, x, y, color, vel, is_enemy):
@@ -45,7 +46,8 @@ class RectProjectile(Projectile):
 
 
 class Player:
-    player_image = pygame.image.load(os.path.join('assets','images','Ship.png'))
+    player_image = pygame.image.load(
+        os.path.join('assets', 'images', 'Ship.png'))
     player_image = pygame.transform.scale(player_image, (45, 24))
 
     def __init__(self, x, y, width, height, vel):
@@ -95,10 +97,15 @@ class Enemy:
     def shoot(self):
         pass
 
+    def destroy(self):
+        print("destroyed", self.score)
+
 
 class AlphaEnemy(Enemy):
-    enemy_image1 = pygame.image.load(os.path.join('assets','images','InvaderA1.png'))
-    enemy_image2 = pygame.image.load(os.path.join('assets','images','InvaderA2.png'))
+    enemy_image1 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderA1.png'))
+    enemy_image2 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderA2.png'))
     enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
     enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
 
@@ -111,8 +118,10 @@ class AlphaEnemy(Enemy):
 
 
 class BetaEnemy(Enemy):
-    enemy_image1 = pygame.image.load(os.path.join('assets','images','InvaderB1.png'))
-    enemy_image2 = pygame.image.load(os.path.join('assets','images','InvaderB2.png'))
+    enemy_image1 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderB1.png'))
+    enemy_image2 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderB2.png'))
     enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
     enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
 
@@ -125,8 +134,10 @@ class BetaEnemy(Enemy):
 
 
 class GammaEnemy(Enemy):
-    enemy_image1 = pygame.image.load(os.path.join('assets','images','InvaderC1.png'))
-    enemy_image2 = pygame.image.load(os.path.join('assets','images','InvaderC2.png'))
+    enemy_image1 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderC1.png'))
+    enemy_image2 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderC2.png'))
     enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
     enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
 
@@ -206,6 +217,7 @@ while run:
         if event.type == pygame.QUIT:
             run = False
     handle_player_input()
+
     if (player_bullet != None):
         if (player_bullet.y > -5):
             player_bullet.y -= player_bullet.vel
@@ -217,6 +229,8 @@ while run:
             bullet.y += bullet.vel
         else:
             bullets.pop(bullets.index(bullet))
+
+    enemy: Enemy
     check_wall = False
     for enemy in enemies:
         if (direction == "right" and enemy.x + enemy.width >= win_width):
@@ -225,8 +239,20 @@ while run:
         elif (direction == "left" and enemy.x <= 0):
             direction = "right"
             check_wall = True
+
     for enemy in enemies:
         enemy.move(win, direction, check_wall, vel + 6 / (2 * len(enemies)))
+        if (player_bullet != None):
+            if (pygame.Rect(player_bullet.x, player_bullet.y,
+                            player_bullet.width,
+                            player_bullet.height).colliderect(
+                                pygame.Rect(enemy.x, enemy.y, enemy.width,
+                                            enemy.height))):
+                player_bullet = None
+                player.can_fire = True
+                enemy.destroy()
+                enemies.pop(enemies.index(enemy))
+
     redraw_game_window()
     clock.tick(60)
 pygame.quit()
