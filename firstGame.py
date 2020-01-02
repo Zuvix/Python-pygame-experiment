@@ -63,14 +63,25 @@ class Player:
 
 
 class Enemy:
-    def __init__(self, x, y, width, height, anim_offset):
+    def __init__(self, x, y, width, height, score, anim_offset, color, image_1,
+                 image_2):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.score = 0
+        self.score = score
         self.counter = 0 + anim_offset
         self.image_id = 1
+        print(type(image_1))
+        i1 = image_1
+        i1 = pygame.transform.scale(i1, (32, 24))
+        set_color(i1, color)
+        self.enemy_image1 = i1
+        i2 = image_2
+        i2 = pygame.transform.scale(i2, (32, 24))
+        set_color(i2, color)
+        self.enemy_image2 = i2
+        self.enemy_image = i1
 
     def draw(self, win, anim_speed):
         if (self.counter >= anim_speed):
@@ -101,54 +112,6 @@ class Enemy:
         print("destroyed", self.score)
 
 
-class AlphaEnemy(Enemy):
-    enemy_image1 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderA1.png'))
-    enemy_image2 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderA2.png'))
-    enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
-    enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.score = 10
-        self.enemy_image = self.enemy_image1
-        set_color(self.enemy_image1, pygame.Color(0, 100, 255))
-        set_color(self.enemy_image2, pygame.Color(0, 100, 255))
-
-
-class BetaEnemy(Enemy):
-    enemy_image1 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderB1.png'))
-    enemy_image2 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderB2.png'))
-    enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
-    enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.score = 20
-        self.enemy_image = self.enemy_image1
-        set_color(self.enemy_image1, pygame.Color(255, 0, 255))
-        set_color(self.enemy_image2, pygame.Color(255, 0, 255))
-
-
-class GammaEnemy(Enemy):
-    enemy_image1 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderC1.png'))
-    enemy_image2 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderC2.png'))
-    enemy_image1 = pygame.transform.scale(enemy_image1, (32, 24))
-    enemy_image2 = pygame.transform.scale(enemy_image2, (32, 24))
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.score = 30
-        self.enemy_image = self.enemy_image1
-        set_color(self.enemy_image1, pygame.Color(255, 100, 0))
-        set_color(self.enemy_image2, pygame.Color(255, 100, 0))
-
-
 def set_color(img, color):
     for x in range(img.get_width()):
         for y in range(img.get_height()):
@@ -164,7 +127,7 @@ def redraw_game_window():
     if player_bullet != None:
         player_bullet.draw(win)
     for enemy in enemies:
-        enemy.draw(win, anim_speed + 2 * len(enemies))
+        enemy.draw(win, anim_speed - 210 / (1.5 * len(enemies)))
     pygame.display.update()
 
 
@@ -184,20 +147,35 @@ def handle_player_input():
 
 
 def spawn_enemies():
+    img_a1 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderA1.png'))
+    img_a2 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderA2.png'))
+    img_b1 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderB1.png'))
+    img_b2 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderB2.png'))
+    img_c1 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderC1.png'))
+    img_c2 = pygame.image.load(
+        os.path.join('assets', 'images', 'InvaderC2.png'))
     x = 0
     y = 0
     for d in range(1):
         for i in range(11):
             enemies.append(
-                GammaEnemy(x + i * 48, y + d * 38 + 8, 32, 24, d * 15))
+                Enemy(x + i * 48, y + d * 38 + 8, 32, 24, 30, d * 15,
+                      pygame.Color(255, 100, 0), img_c1, img_c2))
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
-                BetaEnemy(x + i * 48, y + d * 38 + 8, 32, 24, d * 15))
+                Enemy(x + i * 48, y + d * 38 + 8, 32, 24, 20, d * 15,
+                      pygame.Color(255, 0, 255), img_b1, img_b2))
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
-                AlphaEnemy(x + i * 48, y + d * 38 + 8, 32, 24, d * 15))
+                Enemy(x + i * 48, y + d * 38 + 8, 32, 24, 10, d * 15,
+                      pygame.Color(0, 100, 255), img_a1, img_a2))
 
 
 player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 5)
@@ -208,7 +186,7 @@ enemies = []
 player_bullet = None
 
 direction = "right"
-anim_speed = 8
+anim_speed = 148
 vel = 0.25
 # Gameloop
 spawn_enemies()
@@ -241,7 +219,7 @@ while run:
             check_wall = True
 
     for enemy in enemies:
-        enemy.move(win, direction, check_wall, vel + 6 / (2 * len(enemies)))
+        enemy.move(win, direction, check_wall, vel + 10 / (1.5 * len(enemies)))
         if (player_bullet != None):
             if (pygame.Rect(player_bullet.x, player_bullet.y,
                             player_bullet.width,
