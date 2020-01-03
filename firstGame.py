@@ -2,12 +2,28 @@ import pygame
 import os
 # Init Section
 os.environ['SDL_VIDEO_CENTERED'] = '1'
+pygame.mixer.pre_init(44100, -16, 2, 2048)
+pygame.mixer.init()
 pygame.init()
 win_height = 600
 win_width = 800
 win = pygame.display.set_mode((win_width, win_height))
 pygame.display.set_caption("Space Invaders by Zuvix")
 print(os.getcwd())
+bullet_sound = pygame.mixer.Sound(
+    os.path.join('assets', 'nSounds', 'shoot.wav'))
+enemy_death_sound = pygame.mixer.Sound(
+    os.path.join('assets', 'nSounds', 'invaderkilled.wav'))
+
+
+def calculate_velocity(number_of_enemies: int):
+    return (0.25 + 10 / (1.5 * number_of_enemies))
+
+
+def calculate_animation_speed(number_of_enemies: int):
+    if (number_of_enemies == 1):
+        return 8
+    return 68 - 60 / (number_of_enemies / 1.5)
 
 
 class Projectile(object):
@@ -126,8 +142,9 @@ def redraw_game_window():
         bullet.draw(win)
     if player_bullet != None:
         player_bullet.draw(win)
+    anim_speed = calculate_animation_speed(len(enemies))
     for enemy in enemies:
-        enemy.draw(win, anim_speed - 210 / (1.5 * len(enemies)))
+        enemy.draw(win, anim_speed)
     pygame.display.update()
 
 
@@ -140,9 +157,10 @@ def handle_player_input():
         player.x += player.vel
     if keys[pygame.K_SPACE] and player.can_fire:
         player.can_fire = False
+        bullet_sound.play()
         player_bullet = RectProjectile(3, 16,
                                        round(player.x + player.width // 2 - 1),
-                                       round(player.y - 1), (0, 200, 0), 7,
+                                       round(player.y - 1), (0, 200, 0), 6.5,
                                        True)
 
 
@@ -184,10 +202,7 @@ clock = pygame.time.Clock()
 bullets = []
 enemies = []
 player_bullet = None
-
 direction = "right"
-anim_speed = 148
-vel = 0.25
 # Gameloop
 spawn_enemies()
 while run:
@@ -219,7 +234,8 @@ while run:
             check_wall = True
 
     for enemy in enemies:
-        enemy.move(win, direction, check_wall, vel + 10 / (1.5 * len(enemies)))
+        enemy.move(win, direction, check_wall,
+                   calculate_velocity(len(enemies)))
         if (player_bullet != None):
             if (pygame.Rect(player_bullet.x, player_bullet.y,
                             player_bullet.width,
@@ -229,6 +245,7 @@ while run:
                 player_bullet = None
                 player.can_fire = True
                 enemy.destroy()
+                enemy_death_sound.play()
                 enemies.pop(enemies.index(enemy))
 
     redraw_game_window()
