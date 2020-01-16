@@ -17,11 +17,11 @@ enemy_death_sound = pygame.mixer.Sound(
 
 
 def calculate_velocity(number_of_enemies: int):
-    return (0.25 + 10 / (1.5 * number_of_enemies))
+    return 0.25 + 10 / (1.5 * number_of_enemies)
 
 
 def calculate_animation_speed(number_of_enemies: int):
-    if (number_of_enemies == 1):
+    if number_of_enemies == 1:
         return 8
     return 68 - 60 / (number_of_enemies / 1.5)
 
@@ -46,8 +46,8 @@ class CircleProjectile(Projectile):
         self.radius = radius
         super().__init__(*args)
 
-    def draw(self, win):
-        pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
+    def draw(self, window):
+        pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
 
 
 class RectProjectile(Projectile):
@@ -56,9 +56,9 @@ class RectProjectile(Projectile):
         self.height = height
         super().__init__(*args)
 
-    def draw(self, win):
-        pygame.draw.rect(win, self.color,
-                         (self.x, self.y, self.width, self.height))
+    def draw(self, window):
+        pygame.draw.rect(window, self.color,
+                         (int(self.x), int(self.y), self.width, self.height))
 
 
 class Player:
@@ -74,8 +74,8 @@ class Player:
         self.vel = vel
         self.can_fire = True
 
-    def draw(self, win):
-        win.blit(self.player_image, (self.x, self.y))
+    def draw(self, window):
+        window.blit(self.player_image, (self.x, self.y))
 
 
 class Enemy:
@@ -88,7 +88,6 @@ class Enemy:
         self.score = score
         self.counter = 0 + anim_offset
         self.image_id = 1
-        print(type(image_1))
         i1 = image_1
         i1 = pygame.transform.scale(i1, (32, 24))
         set_color(i1, color)
@@ -99,26 +98,26 @@ class Enemy:
         self.enemy_image2 = i2
         self.enemy_image = i1
 
-    def draw(self, win, anim_speed):
-        if (self.counter >= anim_speed):
+    def draw(self, window, anim_speed):
+        if self.counter >= anim_speed:
             self.counter = 0
-            if (self.image_id == 1):
+            if self.image_id == 1:
                 self.image_id = 2
                 self.enemy_image = self.enemy_image2
             else:
                 self.image_id = 1
                 self.enemy_image = self.enemy_image1
         self.counter += 1
-        win.blit(self.enemy_image, (self.x, self.y))
+        window.blit(self.enemy_image, (int(self.x), int(self.y)))
 
-    def move(self, win, direction, is_by_wall, vel):
-        if (is_by_wall):
+    def move(self, move_dir, is_by_wall, vel):
+        if is_by_wall:
             self.y += self.height + 10
-        elif (direction == "right"):
+        elif move_dir == "right":
             self.x += vel
-        elif (direction == "left"):
+        elif move_dir == "left":
             self.x -= vel
-        if (self.y + self.height + 3 >= win_height):
+        if self.y + self.height + 3 >= win_height:
             pygame.quit()
 
     def shoot(self):
@@ -165,6 +164,7 @@ def handle_player_input():
 
 
 def spawn_enemies():
+    enemies= []
     img_a1 = pygame.image.load(
         os.path.join('assets', 'images', 'InvaderA1.png'))
     img_a2 = pygame.image.load(
@@ -194,25 +194,24 @@ def spawn_enemies():
             enemies.append(
                 Enemy(x + i * 48, y + d * 38 + 8, 32, 24, 10, d * 15,
                       pygame.Color(0, 100, 255), img_a1, img_a2))
-
+    return enemies
 
 player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 5)
 run = True
 clock = pygame.time.Clock()
 bullets = []
-enemies = []
 player_bullet = None
 direction = "right"
 # Gameloop
-spawn_enemies()
+enemies = spawn_enemies()
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
     handle_player_input()
 
-    if (player_bullet != None):
-        if (player_bullet.y > -5):
+    if player_bullet != None:
+        if player_bullet.y > -5:
             player_bullet.y -= player_bullet.vel
         else:
             player_bullet = None
@@ -226,22 +225,22 @@ while run:
     enemy: Enemy
     check_wall = False
     for enemy in enemies:
-        if (direction == "right" and enemy.x + enemy.width >= win_width):
+        if direction == "right" and enemy.x + enemy.width >= win_width:
             direction = "left"
             check_wall = True
-        elif (direction == "left" and enemy.x <= 0):
+        elif direction == "left" and enemy.x <= 0:
             direction = "right"
             check_wall = True
 
     for enemy in enemies:
-        enemy.move(win, direction, check_wall,
+        enemy.move(direction, check_wall,
                    calculate_velocity(len(enemies)))
-        if (player_bullet != None):
-            if (pygame.Rect(player_bullet.x, player_bullet.y,
+        if player_bullet != None:
+            if pygame.Rect(int(player_bullet.x), int(player_bullet.y),
                             player_bullet.width,
                             player_bullet.height).colliderect(
-                                pygame.Rect(enemy.x, enemy.y, enemy.width,
-                                            enemy.height))):
+                                pygame.Rect(int(enemy.x), int(enemy.y), enemy.width,
+                                            enemy.height)):
                 player_bullet = None
                 player.can_fire = True
                 enemy.destroy()
