@@ -1,6 +1,7 @@
 import pygame
 import os
-# Init Section
+
+# Display and enviroment init section
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.mixer.init()
@@ -9,11 +10,29 @@ win_height = 600
 win_width = 800
 win = pygame.display.set_mode((win_width, win_height))
 pygame.display.set_caption("Space Invaders by Zuvix")
-print(os.getcwd())
+
+#Load Sound Assets
 bullet_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'shoot.wav'))
 enemy_death_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'invaderkilled.wav'))
+
+#Load Images
+img_p = pygame.image.load(os.path.join('assets', 'images', 'Ship.png'))
+img_a1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderA1.png'))
+img_a2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderA2.png'))
+img_b1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderB1.png'))
+img_b2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderB2.png'))
+img_c1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderC1.png'))
+img_c2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderC2.png'))
+
+#Define Colors
+ORANGE = pygame.Color(255, 100, 0)
+GREEN = pygame.Color(78, 255, 87)
+YELLOW = pygame.Color(241, 255, 0)
+BLUE = pygame.Color(0, 150, 240)
+PURPLE = pygame.Color(203, 0, 255)
+RED = pygame.Color(237, 28, 36)
 
 
 def calculate_velocity(number_of_enemies: int):
@@ -24,6 +43,13 @@ def calculate_animation_speed(number_of_enemies: int):
     if number_of_enemies == 1:
         return 8
     return 68 - 60 / (number_of_enemies / 1.5)
+
+
+def set_color(img, color):
+    for x in range(img.get_width()):
+        for y in range(img.get_height()):
+            color.a = img.get_at((x, y)).a  # Preserve the alpha value.
+            img.set_at((x, y), color)  # Set the color of the pixel.
 
 
 class Projectile(object):
@@ -62,8 +88,7 @@ class RectProjectile(Projectile):
 
 
 class Player:
-    player_image = pygame.image.load(
-        os.path.join('assets', 'images', 'Ship.png'))
+    player_image = img_p
     player_image = pygame.transform.scale(player_image, (45, 24))
 
     def __init__(self, x, y, width, height, vel):
@@ -127,13 +152,6 @@ class Enemy:
         print("destroyed", self.score)
 
 
-def set_color(img, color):
-    for x in range(img.get_width()):
-        for y in range(img.get_height()):
-            color.a = img.get_at((x, y)).a  # Preserve the alpha value.
-            img.set_at((x, y), color)  # Set the color of the pixel.
-
-
 def redraw_game_window():
     win.fill((0, 0, 0))
     player.draw(win)
@@ -164,31 +182,19 @@ def handle_player_input():
 
 
 def spawn_enemies():
-    enemies= []
-    img_a1 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderA1.png'))
-    img_a2 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderA2.png'))
-    img_b1 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderB1.png'))
-    img_b2 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderB2.png'))
-    img_c1 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderC1.png'))
-    img_c2 = pygame.image.load(
-        os.path.join('assets', 'images', 'InvaderC2.png'))
+    enemies = []
     x = 0
     y = 0
     for d in range(1):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 48, y + d * 38 + 8, 32, 24, 30, d * 15,
-                      pygame.Color(255, 100, 0), img_c1, img_c2))
+                Enemy(x + i * 48, y + d * 38 + 8, 32, 24, 30, d * 15, ORANGE,
+                      img_c1, img_c2))
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 48, y + d * 38 + 8, 32, 24, 20, d * 15,
-                      pygame.Color(255, 0, 255), img_b1, img_b2))
+                Enemy(x + i * 48, y + d * 38 + 8, 32, 24, 20, d * 15, PURPLE,
+                      img_b1, img_b2))
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
@@ -196,12 +202,15 @@ def spawn_enemies():
                       pygame.Color(0, 100, 255), img_a1, img_a2))
     return enemies
 
+
+#Initialize Game variables
 player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 5)
 run = True
 clock = pygame.time.Clock()
 bullets = []
 player_bullet = None
 direction = "right"
+
 # Gameloop
 enemies = spawn_enemies()
 while run:
@@ -233,14 +242,13 @@ while run:
             check_wall = True
 
     for enemy in enemies:
-        enemy.move(direction, check_wall,
-                   calculate_velocity(len(enemies)))
+        enemy.move(direction, check_wall, calculate_velocity(len(enemies)))
         if player_bullet != None:
             if pygame.Rect(int(player_bullet.x), int(player_bullet.y),
-                            player_bullet.width,
-                            player_bullet.height).colliderect(
-                                pygame.Rect(int(enemy.x), int(enemy.y), enemy.width,
-                                            enemy.height)):
+                           player_bullet.width,
+                           player_bullet.height).colliderect(
+                               pygame.Rect(int(enemy.x), int(enemy.y),
+                                           enemy.width, enemy.height)):
                 player_bullet = None
                 player.can_fire = True
                 enemy.destroy()
