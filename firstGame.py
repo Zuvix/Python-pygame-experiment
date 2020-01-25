@@ -1,5 +1,6 @@
 import pygame
 import os
+import random
 
 # Display and enviroment init section
 os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -37,11 +38,14 @@ WHITE = pygame.Color(255, 255, 255)
 
 
 def calculate_velocity(number_of_enemies: int):
-    return 0.25 + 10 / (1.5 * number_of_enemies)
+    if number_of_enemies > 0:
+        return 0.25 + 10 / (1.5 * number_of_enemies)
+    else:
+        return 0
 
 
 def calculate_animation_speed(number_of_enemies: int):
-    if number_of_enemies == 1:
+    if number_of_enemies <= 1:
         return 8
     return 68 - 60 / (number_of_enemies / 1.5)
 
@@ -106,7 +110,8 @@ class Player:
 
 class Enemy:
     def __init__(self, x, y, width, height, score, anim_offset, color, image_1,
-                 image_2):
+                 image_2, is_active, depth, row, min_shoot_cd, max_shoot_cd,
+                 bullet_speed):
         self.x = x
         self.y = y
         self.width = width
@@ -114,6 +119,16 @@ class Enemy:
         self.score = score
         self.counter = 0 + anim_offset
         self.image_id = 1
+        self.is_active = is_active
+        self.depth = depth
+        self.row = row
+        self.min_shoot_cd = min_shoot_cd
+        self.max_shoot_cd = max_shoot_cd
+        self.bullet_speed = bullet_speed
+        self.cd = 0
+        self.set_cd = 0
+        self.color = color
+
         i1 = image_1
         i1 = pygame.transform.scale(i1, (28, 21))
         set_color(i1, color)
@@ -146,8 +161,22 @@ class Enemy:
         if self.y + self.height + 3 >= win_height:
             pygame.quit()
 
-    def shoot(self):
-        pass
+    def shoot(self, bullets):
+        if self.is_active == True:
+            #Initial cd value, so enemies dont shoot at the same interal
+            if self.set_cd == 0:
+                self.set_cd = 120 + random.randrange(self.min_shoot_cd,
+                                                     self.max_shoot_cd)
+                self.cd = random.randrange(0, 480)
+            self.cd += 1
+            if self.cd > self.set_cd:
+                new_bullet = RectProjectile(4, 15, self.x + self.width // 2,
+                                            self.y + self.height, self.color,
+                                            self.bullet_speed, True)
+                bullets.append(new_bullet)
+                self.cd = 0
+                self.set_cd = random.randrange(self.min_shoot_cd,
+                                               self.max_shoot_cd)
 
     def destroy(self):
         print("destroyed", self.score)
@@ -192,30 +221,48 @@ def handle_player_input():
         bullet_sound.play()
         player_bullet = RectProjectile(3, 16,
                                        round(player.x + player.width // 2 - 1),
-                                       round(player.y - 1), (0, 200, 0), 6.5,
+                                       round(player.y - 1), (0, 200, 0), 9,
                                        True)
 
 
-def spawn_enemies():
+def spawn_enemies(iter: int):
     enemies = []
-    x = 0
-    y = 0
+    #OFFSET X,Y
+    x = 100
+    y = 32 * iter
     for d in range(1):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 30, d * 15, ORANGE,
-                      img_c1, img_c2))
+                      img_c1, img_c2, False, d, i, 350, 700, 4))
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 20, d * 15, PURPLE,
-                      img_b1, img_b2))
+                      img_b1, img_b2, False, d, i, 350, 700, 7))
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 10, d * 15,
-                      pygame.Color(0, 100, 255), img_a1, img_a2))
+                      pygame.Color(0, 100, 255), img_a1, img_a2, False, d, i,
+                      240, 420, 4))
+    for enemy in enemies:
+        if enemy.depth == 4:
+            enemy.is_active = True
     return enemies
+
+
+def activate_next_enemy(enemy_out: Enemy, enemies):
+    if enemy_out.is_active == True:
+        new_max_depth = -1
+        new_enemy: Enemy = None
+        for enemy in enemies:
+            if enemy.row == enemy_out.row and enemy.depth < enemy_out.depth:
+                if enemy.depth > new_max_depth:
+                    new_max_depth = enemy.depth
+                    new_enemy = enemy
+        if new_enemy != None:
+            new_enemy.is_active = True
 
 
 #Initialize Game variables
@@ -226,10 +273,11 @@ bullets = []
 player_bullet = None
 direction = "right"
 score = 0
+iteration = 1
 score_text = Text(font, WHITE, 10, 10)
 
 # Gameloop
-enemies = spawn_enemies()
+enemies = spawn_enemies(iteration)
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -270,7 +318,18 @@ while run:
                 score += enemy.score
                 enemy.destroy()
                 enemy_death_sound.play()
+                activate_next_enemy(enemy, enemies)
                 enemies.pop(enemies.index(enemy))
+        enemy.shoot(bullets)
+    for bullet in bullets:
+        if pygame.Rect(int(bullet.x), int(bullet.y), bullet.width,
+                       bullet.height).colliderect(
+                           pygame.Rect(int(player.x), int(player.y),
+                                       player.width, player.height)):
+            run = False
+    if not enemies:
+        iteration += 1
+        enemies = spawn_enemies(iteration)
 
     redraw_game_window()
     clock.tick(60)
