@@ -64,12 +64,27 @@ class Projectile(object):
         self.color = color
         self.vel = vel
         self.is_enemy = is_enemy
+        self.x_min = self.x - 1
+        self.x_max = self.x + 1
+        self.horizontal_direction = "right"
 
     def draw(self):
         pass
 
     def move(self):
         pass
+
+    def horiznotal_move(self):
+        if self.horizontal_direction == "right":
+            if self.x < self.x_max:
+                self.x += 0.2
+            else:
+                self.horizontal_direction = "left"
+        elif self.horizontal_direction == "left":
+            if self.x > self.x_min:
+                self.x -= 0.2
+            else:
+                self.horizontal_direction = "right"
 
 
 class CircleProjectile(Projectile):
@@ -78,6 +93,7 @@ class CircleProjectile(Projectile):
         super().__init__(*args)
 
     def draw(self, window):
+        self.horiznotal_move()
         pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
 
 
@@ -88,6 +104,7 @@ class RectProjectile(Projectile):
         super().__init__(*args)
 
     def draw(self, window):
+        self.horiznotal_move()
         pygame.draw.rect(window, self.color,
                          (int(self.x), int(self.y), self.width, self.height))
 
@@ -165,12 +182,12 @@ class Enemy:
         if self.is_active == True:
             #Initial cd value, so enemies dont shoot at the same interal
             if self.set_cd == 0:
-                self.set_cd = 120 + random.randrange(self.min_shoot_cd,
-                                                     self.max_shoot_cd)
-                self.cd = random.randrange(0, 480)
+                self.set_cd = 60 + random.randrange(self.min_shoot_cd,
+                                                    self.max_shoot_cd)
+                self.cd = random.randrange(0, 540)
             self.cd += 1
             if self.cd > self.set_cd:
-                new_bullet = RectProjectile(4, 15, self.x + self.width // 2,
+                new_bullet = RectProjectile(4, 18, self.x + self.width // 2,
                                             self.y + self.height, self.color,
                                             self.bullet_speed, True)
                 bullets.append(new_bullet)
@@ -219,7 +236,7 @@ def handle_player_input():
     if keys[pygame.K_SPACE] and player.can_fire:
         player.can_fire = False
         bullet_sound.play()
-        player_bullet = RectProjectile(3, 16,
+        player_bullet = RectProjectile(4, 16,
                                        round(player.x + player.width // 2 - 1),
                                        round(player.y - 1), (0, 200, 0), 9,
                                        True)
@@ -234,18 +251,18 @@ def spawn_enemies(iter: int):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 30, d * 15, ORANGE,
-                      img_c1, img_c2, False, d, i, 350, 700, 4))
+                      img_c1, img_c2, False, d, i, 280, 420, 4))
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 20, d * 15, PURPLE,
-                      img_b1, img_b2, False, d, i, 350, 700, 7))
+                      img_b1, img_b2, False, d, i, 350, 700, 5))
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 10, d * 15,
                       pygame.Color(0, 100, 255), img_a1, img_a2, False, d, i,
-                      240, 420, 4))
+                      350, 700, 4))
     for enemy in enemies:
         if enemy.depth == 4:
             enemy.is_active = True
@@ -266,7 +283,7 @@ def activate_next_enemy(enemy_out: Enemy, enemies):
 
 
 #Initialize Game variables
-player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 5)
+player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 3)
 run = True
 clock = pygame.time.Clock()
 bullets = []
