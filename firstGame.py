@@ -50,12 +50,6 @@ def calculate_velocity(number_of_enemies: int):
         return 0
 
 
-def calculate_animation_speed(number_of_enemies: int):
-    if number_of_enemies <= 1:
-        return 8
-    return 68 - 60 / (number_of_enemies / 1.5)
-
-
 def set_color(img, color):
     for x in range(img.get_width()):
         for y in range(img.get_height()):
@@ -132,15 +126,14 @@ class Player:
 
 
 class Enemy:
-    def __init__(self, x, y, width, height, score, anim_offset, color, image_1,
-                 image_2, is_active, depth, row, min_shoot_cd, max_shoot_cd,
+    def __init__(self, x, y, width, height, score, color, image_1, image_2,
+                 is_active, depth, row, min_shoot_cd, max_shoot_cd,
                  bullet_speed):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.score = score
-        self.counter = 0 + anim_offset
         self.image_id = 1
         self.is_active = is_active
         self.depth = depth
@@ -162,19 +155,16 @@ class Enemy:
         self.enemy_image2 = i2
         self.enemy_image = i1
 
-    def draw(self, window, anim_speed):
-        if self.counter >= anim_speed:
-            self.counter = 0
-            if self.image_id == 1:
-                self.image_id = 2
-                self.enemy_image = self.enemy_image2
-            else:
-                self.image_id = 1
-                self.enemy_image = self.enemy_image1
-        self.counter += 1
+    def draw(self, window):
         window.blit(self.enemy_image, (int(self.x), int(self.y)))
 
     def move(self, move_dir, is_by_wall, vel):
+        if self.image_id == 1:
+            self.image_id = 2
+            self.enemy_image = self.enemy_image2
+        else:
+            self.image_id = 1
+            self.enemy_image = self.enemy_image1
         if is_by_wall:
             self.y += self.height + 10
         elif move_dir == "right":
@@ -220,21 +210,13 @@ class Text:
 
 class Music:
     def __init__(self):
-        self.max_freq = 90
-        self.freq_counter = self.max_freq
         self.index = 0
 
     def check_and_play(self):
-        self.freq_counter += 1
-        if self.freq_counter >= self.max_freq:
-            track_sounds[self.index].play()
-            self.index += 1
-            self.freq_counter = 0
-            if self.index > 3:
-                self.index = 0
-
-    def increase_frequency(self):
-        self.max_freq -= 3
+        track_sounds[self.index].play()
+        self.index += 1
+        if self.index > 3:
+            self.index = 0
 
 
 def redraw_game_window():
@@ -244,9 +226,8 @@ def redraw_game_window():
         bullet.draw(win)
     if player_bullet != None:
         player_bullet.draw(win)
-    anim_speed = calculate_animation_speed(len(enemies))
     for enemy in enemies:
-        enemy.draw(win, anim_speed)
+        enemy.draw(win)
     score_text.draw(win, "Score: " + str(score))
     pygame.display.update()
 
@@ -267,6 +248,56 @@ def handle_player_input():
                                        True)
 
 
+def handle_enemy_movement_direction():
+    check_wall = False
+    global direction
+    for enemy in enemies:
+        if direction == "right" and enemy.x + enemy.width >= win_width:
+            direction = "left"
+            check_wall = True
+        elif direction == "left" and enemy.x <= 0:
+            direction = "right"
+            check_wall = True
+
+
+def handle_bullets():
+    global player_bullet
+    global score
+    if player_bullet != None:
+        if player_bullet.y > -5:
+            player_bullet.y -= player_bullet.vel
+        else:
+            player_bullet = None
+            player.can_fire = True
+    for bullet in bullets:
+        if bullet.y < win_height:
+            bullet.y += bullet.vel
+        else:
+            bullets.pop(bullets.index(bullet))
+
+    for enemy in enemies:
+        if player_bullet != None:
+            if pygame.Rect(int(player_bullet.x), int(player_bullet.y),
+                           player_bullet.width,
+                           player_bullet.height).colliderect(
+                               pygame.Rect(int(enemy.x), int(enemy.y),
+                                           enemy.width, enemy.height)):
+                player_bullet = None
+                player.can_fire = True
+                score += enemy.score
+                enemy.destroy()
+                enemy_death_sound.play()
+                activate_next_enemy(enemy, enemies)
+                enemies.pop(enemies.index(enemy))
+        enemy.shoot(bullets)
+    for bullet in bullets:
+        if pygame.Rect(int(bullet.x), int(bullet.y), bullet.width,
+                       bullet.height).colliderect(
+                           pygame.Rect(int(player.x), int(player.y),
+                                       player.width, player.height)):
+            run = False
+
+
 def spawn_enemies(iter: int):
     enemies = []
     #OFFSET X,Y
@@ -275,17 +306,17 @@ def spawn_enemies(iter: int):
     for d in range(1):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 30, 0, ORANGE,
-                      img_c1, img_c2, False, d, i, 280, 420, 4))
+                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 30, ORANGE, img_c1,
+                      img_c2, False, d, i, 280, 420, 4))
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 20, 0, PURPLE,
-                      img_b1, img_b2, False, d, i, 350, 700, 5))
+                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 20, PURPLE, img_b1,
+                      img_b2, False, d, i, 350, 700, 5))
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 10, 0,
+                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 10,
                       pygame.Color(0, 100, 255), img_a1, img_a2, False, d, i,
                       350, 700, 4))
     for enemy in enemies:
@@ -326,51 +357,8 @@ while run:
         if event.type == pygame.QUIT:
             run = False
     handle_player_input()
-    music_loop.check_and_play()
-    if player_bullet != None:
-        if player_bullet.y > -5:
-            player_bullet.y -= player_bullet.vel
-        else:
-            player_bullet = None
-            player.can_fire = True
-    for bullet in bullets:
-        if bullet.y < win_height:
-            bullet.y += bullet.vel
-        else:
-            bullets.pop(bullets.index(bullet))
-
-    check_wall = False
-    for enemy in enemies:
-        if direction == "right" and enemy.x + enemy.width >= win_width:
-            direction = "left"
-            check_wall = True
-        elif direction == "left" and enemy.x <= 0:
-            direction = "right"
-            check_wall = True
-
-    for enemy in enemies:
-        enemy.move(direction, check_wall, calculate_velocity(len(enemies)))
-        if player_bullet != None:
-            if pygame.Rect(int(player_bullet.x), int(player_bullet.y),
-                           player_bullet.width,
-                           player_bullet.height).colliderect(
-                               pygame.Rect(int(enemy.x), int(enemy.y),
-                                           enemy.width, enemy.height)):
-                player_bullet = None
-                player.can_fire = True
-                score += enemy.score
-                enemy.destroy()
-                enemy_death_sound.play()
-                music_loop.increase_frequency()
-                activate_next_enemy(enemy, enemies)
-                enemies.pop(enemies.index(enemy))
-        enemy.shoot(bullets)
-    for bullet in bullets:
-        if pygame.Rect(int(bullet.x), int(bullet.y), bullet.width,
-                       bullet.height).colliderect(
-                           pygame.Rect(int(player.x), int(player.y),
-                                       player.width, player.height)):
-            run = False
+    handle_enemy_movement_direction()
+    handle_bullets()
     if not enemies:
         iteration += 1
         enemies = spawn_enemies(iteration)
