@@ -12,12 +12,18 @@ win_width = 800
 win = pygame.display.set_mode((win_width, win_height))
 font = pygame.font.Font(os.path.join("assets", "fonts", 'unifont.ttf'), 16)
 pygame.display.set_caption("Space Invaders by Zuvix")
+
 #Load Sound Assets
 bullet_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'shoot.wav'))
 enemy_death_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'invaderkilled.wav'))
-
+track_sounds = []
+for i in range(1, 5):
+    track_sounds.append(
+        pygame.mixer.Sound(
+            os.path.join('assets', 'nSounds',
+                         'fastinvader' + str(i) + ".wav")))
 #Load Images
 img_p = pygame.image.load(os.path.join('assets', 'images', 'Ship.png'))
 img_a1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderA1.png'))
@@ -64,8 +70,8 @@ class Projectile(object):
         self.color = color
         self.vel = vel
         self.is_enemy = is_enemy
-        self.x_min = self.x - 1
-        self.x_max = self.x + 1
+        self.x_min = self.x - 0.2
+        self.x_max = self.x + 0.2
         self.horizontal_direction = "right"
 
     def draw(self):
@@ -77,12 +83,12 @@ class Projectile(object):
     def horiznotal_move(self):
         if self.horizontal_direction == "right":
             if self.x < self.x_max:
-                self.x += 0.2
+                self.x += 0.10
             else:
                 self.horizontal_direction = "left"
         elif self.horizontal_direction == "left":
             if self.x > self.x_min:
-                self.x -= 0.2
+                self.x -= 0.10
             else:
                 self.horizontal_direction = "right"
 
@@ -187,7 +193,7 @@ class Enemy:
                 self.cd = random.randrange(0, 540)
             self.cd += 1
             if self.cd > self.set_cd:
-                new_bullet = RectProjectile(4, 18, self.x + self.width // 2,
+                new_bullet = RectProjectile(4, 20, self.x + self.width // 2,
                                             self.y + self.height, self.color,
                                             self.bullet_speed, True)
                 bullets.append(new_bullet)
@@ -210,6 +216,25 @@ class Text:
     def draw(self, window, text):
         text_obj = self.font.render(text, 1, self.color)
         window.blit(text_obj, (self.x, self.y))
+
+
+class Music:
+    def __init__(self):
+        self.max_freq = 90
+        self.freq_counter = self.max_freq
+        self.index = 0
+
+    def check_and_play(self):
+        self.freq_counter += 1
+        if self.freq_counter >= self.max_freq:
+            track_sounds[self.index].play()
+            self.index += 1
+            self.freq_counter = 0
+            if self.index > 3:
+                self.index = 0
+
+    def increase_frequency(self):
+        self.max_freq -= 3
 
 
 def redraw_game_window():
@@ -250,17 +275,17 @@ def spawn_enemies(iter: int):
     for d in range(1):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 30, d * 15, ORANGE,
+                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 30, 0, ORANGE,
                       img_c1, img_c2, False, d, i, 280, 420, 4))
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 20, d * 15, PURPLE,
+                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 20, 0, PURPLE,
                       img_b1, img_b2, False, d, i, 350, 700, 5))
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 10, d * 15,
+                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 10, 0,
                       pygame.Color(0, 100, 255), img_a1, img_a2, False, d, i,
                       350, 700, 4))
     for enemy in enemies:
@@ -292,6 +317,7 @@ direction = "right"
 score = 0
 iteration = 1
 score_text = Text(font, WHITE, 10, 10)
+music_loop = Music()
 
 # Gameloop
 enemies = spawn_enemies(iteration)
@@ -300,7 +326,7 @@ while run:
         if event.type == pygame.QUIT:
             run = False
     handle_player_input()
-
+    music_loop.check_and_play()
     if player_bullet != None:
         if player_bullet.y > -5:
             player_bullet.y -= player_bullet.vel
@@ -335,6 +361,7 @@ while run:
                 score += enemy.score
                 enemy.destroy()
                 enemy_death_sound.play()
+                music_loop.increase_frequency()
                 activate_next_enemy(enemy, enemies)
                 enemies.pop(enemies.index(enemy))
         enemy.shoot(bullets)
