@@ -4,26 +4,34 @@ import random
 
 # Display and enviroment init section
 os.environ['SDL_VIDEO_CENTERED'] = '1'
-pygame.mixer.pre_init(44100, -16, 2, 2048)
-pygame.mixer.init()
+pygame.mixer.pre_init(44100, -16, 300, 2048)
 pygame.init()
 win_height = 600
 win_width = 800
 win = pygame.display.set_mode((win_width, win_height))
 font = pygame.font.Font(os.path.join("assets", "fonts", 'unifont.ttf'), 16)
 pygame.display.set_caption("Space Invaders by Zuvix")
+icon = pygame.image.load(os.path.join('assets', 'images', 'icon.png'))
+pygame.display.set_icon(icon)
 
 #Load Sound Assets
 bullet_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'shoot.wav'))
+bullet_sound.set_volume(0.6)
 enemy_death_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'invaderkilled.wav'))
+enemy_death_sound.set_volume(0.2)
+spawn_sound = pygame.mixer.Sound(os.path.join('assets', 'nSounds',
+                                              'spawn.wav'))
+spawn_sound.set_volume(0.5)
 track_sounds = []
 for i in range(1, 5):
     track_sounds.append(
         pygame.mixer.Sound(
             os.path.join('assets', 'nSounds',
                          'fastinvader' + str(i) + ".wav")))
+    track_sounds[i - 1].set_volume(0.5)
+
 #Load Images
 img_p = pygame.image.load(os.path.join('assets', 'images', 'Ship.png'))
 img_a1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderA1.png'))
@@ -32,6 +40,7 @@ img_b1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderB1.png'))
 img_b2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderB2.png'))
 img_c1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderC1.png'))
 img_c2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderC2.png'))
+img_ufo = pygame.image.load(os.path.join('assets', 'images', 'ufo.png'))
 
 #Define Colors
 ORANGE = pygame.Color(255, 100, 0)
@@ -41,13 +50,6 @@ BLUE = pygame.Color(0, 150, 240)
 PURPLE = pygame.Color(203, 0, 255)
 RED = pygame.Color(237, 28, 36)
 WHITE = pygame.Color(255, 255, 255)
-
-
-def calculate_velocity(number_of_enemies: int):
-    if number_of_enemies > 0:
-        return 0.25 + 10 / (1.5 * number_of_enemies)
-    else:
-        return 0
 
 
 def set_color(img, color):
@@ -159,20 +161,22 @@ class Enemy:
         window.blit(self.enemy_image, (int(self.x), int(self.y)))
 
     def move(self, move_dir, is_by_wall, vel):
-        if self.image_id == 1:
-            self.image_id = 2
-            self.enemy_image = self.enemy_image2
-        else:
-            self.image_id = 1
-            self.enemy_image = self.enemy_image1
         if is_by_wall:
-            self.y += self.height + 10
+            self.y += self.height + 12
         elif move_dir == "right":
             self.x += vel
         elif move_dir == "left":
             self.x -= vel
         if self.y + self.height + 3 >= win_height:
             pygame.quit()
+
+    def change_anim(self):
+        if self.image_id == 1:
+            self.image_id = 2
+            self.enemy_image = self.enemy_image2
+        else:
+            self.image_id = 1
+            self.enemy_image = self.enemy_image1
 
     def shoot(self, bullets):
         if self.is_active == True:
@@ -213,7 +217,7 @@ class Music:
         self.index = 0
 
     def check_and_play(self):
-        track_sounds[self.index].play()
+        pygame.mixer.find_channel().play(track_sounds[self.index])
         self.index += 1
         if self.index > 3:
             self.index = 0
@@ -241,7 +245,7 @@ def handle_player_input():
         player.x += player.vel
     if keys[pygame.K_SPACE] and player.can_fire:
         player.can_fire = False
-        bullet_sound.play()
+        pygame.mixer.find_channel().play(bullet_sound)
         player_bullet = RectProjectile(4, 16,
                                        round(player.x + player.width // 2 - 1),
                                        round(player.y - 1), (0, 200, 0), 9,
@@ -255,14 +259,17 @@ def handle_enemy_movement_direction():
         if direction == "right" and enemy.x + enemy.width >= win_width:
             direction = "left"
             check_wall = True
-        elif direction == "left" and enemy.x <= 0:
+        elif direction == "left" and enemy.x - enemy.width <= 0:
             direction = "right"
             check_wall = True
+    return check_wall
 
 
 def handle_bullets():
     global player_bullet
     global score
+    global game_speed
+    global run
     if player_bullet != None:
         if player_bullet.y > -5:
             player_bullet.y -= player_bullet.vel
@@ -286,7 +293,8 @@ def handle_bullets():
                 player.can_fire = True
                 score += enemy.score
                 enemy.destroy()
-                enemy_death_sound.play()
+                pygame.mixer.find_channel().play(enemy_death_sound)
+                game_speed -= 2
                 activate_next_enemy(enemy, enemies)
                 enemies.pop(enemies.index(enemy))
         enemy.shoot(bullets)
@@ -299,30 +307,37 @@ def handle_bullets():
 
 
 def spawn_enemies(iter: int):
-    enemies = []
+    global enemies
     #OFFSET X,Y
+    spawn_sound.play(-1)
     x = 100
-    y = 32 * iter
+    y = 36 * iter - 2
     for d in range(1):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 30, ORANGE, img_c1,
-                      img_c2, False, d, i, 280, 420, 4))
+                      img_c2, False, d, i, 380, 420, 4))
+            clock.tick(20)
+            redraw_game_window()
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 20, PURPLE, img_b1,
-                      img_b2, False, d, i, 350, 700, 5))
+                      img_b2, False, d, i, 500, 600, 5))
+            clock.tick(20)
+            redraw_game_window()
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
                 Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 10,
                       pygame.Color(0, 100, 255), img_a1, img_a2, False, d, i,
-                      350, 700, 4))
+                      500, 600, 4))
+            clock.tick(20)
+            redraw_game_window()
     for enemy in enemies:
         if enemy.depth == 4:
             enemy.is_active = True
-    return enemies
+    spawn_sound.stop()
 
 
 def activate_next_enemy(enemy_out: Enemy, enemies):
@@ -338,6 +353,33 @@ def activate_next_enemy(enemy_out: Enemy, enemies):
             new_enemy.is_active = True
 
 
+def move_enemies():
+    global current_time
+    global enemy_move_cycle
+    global game_speed
+    current_time += 2
+    vel = 8
+    if len(enemies) == 1:
+        game_speed = 16
+        if current_time == 4 or current_time == 12:
+            by_wall = handle_enemy_movement_direction()
+            for enemy in enemies:
+                enemy.move(direction, by_wall, vel)
+    if current_time >= game_speed:
+        current_time = 0
+        music_loop.check_and_play()
+        by_wall = handle_enemy_movement_direction()
+        for enemy in enemies:
+            enemy.move(direction, by_wall, vel)
+            enemy.change_anim()
+            enemy_move_cycle = 0
+    if current_time >= game_speed / 2 and enemy_move_cycle == 0:
+        enemy_move_cycle = 1
+        by_wall = handle_enemy_movement_direction()
+        for enemy in enemies:
+            enemy.move(direction, by_wall, vel)
+
+
 #Initialize Game variables
 player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 3)
 run = True
@@ -346,23 +388,30 @@ bullets = []
 player_bullet = None
 direction = "right"
 score = 0
-iteration = 1
+current_time = 80
+enemy_move_cycle = 0
+game_speed = 138
+iteration = 0
 score_text = Text(font, WHITE, 10, 10)
 music_loop = Music()
 
 # Gameloop
-enemies = spawn_enemies(iteration)
+enemies = []
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-    handle_player_input()
-    handle_enemy_movement_direction()
-    handle_bullets()
     if not enemies:
-        iteration += 1
-        enemies = spawn_enemies(iteration)
-
+        iteration += 2
+        spawn_enemies(iteration)
+        current_time = 80
+        enemy_move_cycle = 1
+        game_speed = 138
+        direction = "right"
+    if (enemies):
+        handle_player_input()
+        move_enemies()
+        handle_bullets()
     redraw_game_window()
     clock.tick(60)
 pygame.quit()
