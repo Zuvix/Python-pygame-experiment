@@ -270,7 +270,7 @@ def redraw_game_window():
 
 def handle_player_input():
     global player_bullet
-    global random_shot_count
+    global player_shot_count
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT] and player.x > 0:
         player.x -= player.vel
@@ -278,7 +278,7 @@ def handle_player_input():
         player.x += player.vel
     if keys[pygame.K_SPACE] and player.can_fire:
         player.can_fire = False
-        random_shot_count += 1
+        player_shot_count += 1
         pygame.mixer.find_channel().play(bullet_sound)
         player_bullet = RectProjectile(4, 16,
                                        round(player.x + player.width // 2 - 1),
@@ -430,22 +430,30 @@ def handle_ufo():
     global player
     global score
     global music_muted
-    ufo.move()
-    if ufo.x > win_width:
-        destroy_ufo()
-
-    if not player_bullet == None:
-        if pygame.Rect(int(player_bullet.x), int(player_bullet.y),
-                       player_bullet.width, player_bullet.height).colliderect(
-                           pygame.Rect(int(ufo.x), int(ufo.y), ufo.width,
-                                       ufo.height)):
+    global player_shot_count
+    if ufo == None:
+        if ufo_milestone == player_shot_count:
+            spawn_ufo()
+            player_shot_count = 0
+            ufo_milestione = random.randrange(12, 25)
+    else:
+        ufo.move()
+        if ufo.x > win_width:
             destroy_ufo()
-            player_bullet = None
-            player.can_fire = True
-            possible_scores = (50, 100, 150)
-            random_num = random.randrange(0, 3)
-            score += possible_scores[random_num]
-            pygame.mixer.find_channel().play(ufo_kill_sounds[random_num])
+
+        elif not player_bullet == None:
+            if pygame.Rect(int(player_bullet.x), int(player_bullet.y),
+                           player_bullet.width,
+                           player_bullet.height).colliderect(
+                               pygame.Rect(int(ufo.x), int(ufo.y), ufo.width,
+                                           ufo.height)):
+                destroy_ufo()
+                player_bullet = None
+                player.can_fire = True
+                possible_scores = (50, 100, 150)
+                random_num = random.randrange(0, 3)
+                score += possible_scores[random_num]
+                pygame.mixer.find_channel().play(ufo_kill_sounds[random_num])
 
 
 def destroy_ufo():
@@ -474,7 +482,7 @@ music_loop = Music()
 music_muted = False
 ufo = None
 player_shot_count = 0
-random_ufo_trigger = 0
+ufo_milestone = 0
 # Gameloop
 enemies = []
 while run:
@@ -486,20 +494,15 @@ while run:
         spawn_enemies(iteration)
         current_time = 80
         enemy_move_cycle = 1
-        game_speed = 138
+        game_speed = 130
         direction = "right"
         random_shot_count = 0
-        random_ufo_trigger = random.randrange(20, 30)
+        ufo_milestone = random.randrange(20, 30)
     if (enemies):
         handle_player_input()
         move_enemies()
         handle_bullets()
-        if random_shot_count == random_ufo_trigger and len(enemies) > 4:
-            spawn_ufo()
-            random_shot_count = 0
-            random_ufo_trigger = random.randrange(13, 30)
-        if (not ufo == None):
-            handle_ufo()
+        handle_ufo()
     redraw_game_window()
     clock.tick(60)
 pygame.quit()
