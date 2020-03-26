@@ -17,15 +17,16 @@ pygame.display.set_icon(icon)
 #Load Sound Assets
 bullet_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'shoot.wav'))
-bullet_sound.set_volume(0.6)
 enemy_death_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'invaderkilled.wav'))
-enemy_death_sound.set_volume(0.2)
 spawn_sound = pygame.mixer.Sound(os.path.join('assets', 'nSounds',
                                               'spawn.wav'))
-spawn_sound.set_volume(0.5)
 ufo_sound = pygame.mixer.Sound(os.path.join('assets', 'nSounds', 'ufo.wav'))
-ufo_sound.set_volume(0.3)
+ufo_kill_sounds = []
+for i in range(1, 2):
+    ufo_kill_sounds.append(
+        pygame.mixer.Sound(
+            os.path.join('assets', 'nSounds', 'ufo_kill' + str(i) + ".wav")))
 track_sounds = []
 for i in range(1, 5):
     track_sounds.append(
@@ -33,6 +34,12 @@ for i in range(1, 5):
             os.path.join('assets', 'nSounds',
                          'fastinvader' + str(i) + ".wav")))
     track_sounds[i - 1].set_volume(0.5)
+
+#Set volume for sounds
+bullet_sound.set_volume(0.6)
+enemy_death_sound.set_volume(0.2)
+spawn_sound.set_volume(0.5)
+ufo_sound.set_volume(0.3)
 
 #Load Images
 img_p = pygame.image.load(os.path.join('assets', 'images', 'Ship.png'))
@@ -253,6 +260,7 @@ def redraw_game_window():
     if ufo:
         ufo.draw(win)
     score_text.draw(win, "Score: " + str(score))
+    level_text.draw(win, "Wave: " + str(iteration))
     pygame.display.update()
 
 
@@ -278,7 +286,7 @@ def handle_enemy_movement_direction():
     check_wall = False
     global direction
     for enemy in enemies:
-        if direction == "right" and enemy.x + enemy.width >= win_width:
+        if direction == "right" and enemy.x + 2 * enemy.width >= win_width:
             direction = "left"
             check_wall = True
         elif direction == "left" and enemy.x - enemy.width <= 0:
@@ -332,8 +340,8 @@ def spawn_enemies(iter: int):
     global enemies
     #OFFSET X,Y
     spawn_sound.play(-1)
-    x = 100
-    y = 36 * iter - 2
+    x = 150
+    y = 34 + 36 * iter
     for d in range(1):
         for i in range(11):
             enemies.append(
@@ -409,7 +417,7 @@ def spawn_ufo():
     global music_muted
     music_muted = True
     pygame.mixer.find_channel().play(ufo_sound, loops=100)
-    ufo = Ufo(0, 40, 50, 22, 1.5, img_ufo)
+    ufo = Ufo(0, 40, 50, 22, 1.75, img_ufo)
 
 
 def handle_ufo():
@@ -421,6 +429,7 @@ def handle_ufo():
     ufo.move()
     if ufo.x > win_width:
         destroy_ufo()
+
     if not player_bullet == None:
         if pygame.Rect(int(player_bullet.x), int(player_bullet.y),
                        player_bullet.width, player_bullet.height).colliderect(
@@ -432,13 +441,13 @@ def handle_ufo():
             possible_scores = (50, 100, 150)
             random_num = random.randrange(0, 3)
             score += possible_scores[random_num]
+            pygame.mixer.find_channel().play(ufo_kil_sounds[random_num])
 
 
 def destroy_ufo():
     global ufo
     global music_muted
     ufo = None
-    pygame.mixer.find_channel().play(enemy_death_sound)
     ufo_sound.stop()
     music_muted = False
 
@@ -453,9 +462,10 @@ direction = "right"
 score = 0
 current_time = 80
 enemy_move_cycle = 0
-game_speed = 138
+game_speed = 130
 iteration = 0
-score_text = Text(font, WHITE, 10, 10)
+score_text = Text(font, WHITE, 12, 12)
+level_text = Text(font, WHITE, 360, 12)
 music_loop = Music()
 music_muted = False
 ufo = None
@@ -468,7 +478,7 @@ while run:
         if event.type == pygame.QUIT:
             run = False
     if not enemies:
-        iteration += 2
+        iteration += 1
         spawn_enemies(iteration)
         current_time = 80
         enemy_move_cycle = 1
@@ -484,7 +494,7 @@ while run:
             spawn_ufo()
             random_shot_count = 0
             random_ufo_trigger = random.randrange(13, 30)
-        if (ufo):
+        if (not ufo == None):
             handle_ufo()
     redraw_game_window()
     clock.tick(60)
