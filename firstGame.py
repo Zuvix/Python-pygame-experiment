@@ -43,6 +43,7 @@ spawn_sound.set_volume(0.5)
 ufo_sound.set_volume(0.3)
 
 #Load Images
+img_title = pygame.image.load(os.path.join('assets', 'images', 'title.png'))
 img_p = pygame.image.load(os.path.join('assets', 'images', 'Ship.png'))
 img_a1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderA1.png'))
 img_a2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderA2.png'))
@@ -56,7 +57,7 @@ img_ufo = pygame.image.load(os.path.join('assets', 'images', 'ufo.png'))
 ORANGE = pygame.Color(255, 100, 0)
 GREEN = pygame.Color(78, 255, 87)
 YELLOW = pygame.Color(241, 255, 0)
-BLUE = pygame.Color(0, 150, 240)
+BLUE = pygame.Color(0, 100, 255)
 PURPLE = pygame.Color(203, 0, 255)
 RED = pygame.Color(237, 28, 36)
 WHITE = pygame.Color(255, 255, 255)
@@ -68,6 +69,15 @@ def set_color(img, color):
         for y in range(img.get_height()):
             color.a = img.get_at((x, y)).a  # Preserve the alpha value.
             img.set_at((x, y), color)  # Set the color of the pixel.
+
+
+#set colors for invaders
+set_color(img_a1, BLUE)
+set_color(img_a2, BLUE)
+set_color(img_b1, PURPLE)
+set_color(img_b2, PURPLE)
+set_color(img_c1, ORANGE)
+set_color(img_c2, ORANGE)
 
 
 #class for all bullets
@@ -222,7 +232,7 @@ class Ufo:
         self.width = width
         self.height = height
         self.vel = vel
-        self.img = pygame.transform.scale(img, (50, 22))
+        self.img = img
 
     def move(self):
         self.x += self.vel
@@ -488,8 +498,33 @@ def destroy_ufo():
 
 
 def redraw_menu():
-    intro_text = Text(big_font, GREEN, 200, 300)
-    intro_text.draw(win, "Space Invaders")
+    global state
+    intro_text = Text(font, WHITE, 270, win_height - 50)
+    value1_text = Text(font, BLUE, 262, 280)
+    value2_text = Text(font, ORANGE, 492, 280)
+    value3_text = Text(font, PURPLE, 262, 400)
+    value4_text = Text(font, RED, 492, 400)
+    win.fill((0, 0, 0))
+    if state == 1:
+        state = 0
+        intro_text.color = GREEN
+        win.blit(img_a1, (250, 240))
+        win.blit(img_b1, (250, 360))
+        win.blit(img_c1, (480, 240))
+        win.blit(img_ufo, (480, 365))
+    else:
+        state = 1
+        intro_text.color = WHITE
+        win.blit(img_a2, (250, 240))
+        win.blit(img_b2, (250, 360))
+        win.blit(img_c2, (480, 240))
+        win.blit(img_ufo, (480, 365))
+    value1_text.draw(win, "10p")
+    value2_text.draw(win, "30p")
+    value3_text.draw(win, "20p")
+    value4_text.draw(win, "???")
+    intro_text.draw(win, "Hold Space to start the race!")
+    win.blit(img_title, (210, 30))
     pygame.display.update()
 
 
@@ -510,10 +545,12 @@ enemy_move_cycle = 0
 menu = True
 game = False
 run = True
-
 #game
 current_time = 80
 game_speed = 130
+
+#menu
+state = 0
 
 #score and wave
 score = 0
@@ -538,6 +575,11 @@ while run:
             run = False
     if menu:
         redraw_menu()
+        key = pygame.key.get_pressed()
+        if key[pygame.K_SPACE]:
+            menu = False
+            game = True
+        clock.tick(4)
     if game:
         if not enemies:
             iteration += 1
@@ -554,5 +596,5 @@ while run:
             handle_bullets()
             handle_ufo()
         redraw_game_window()
-    clock.tick(60)
+        clock.tick(60)
 pygame.quit()
