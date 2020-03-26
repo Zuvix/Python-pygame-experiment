@@ -10,6 +10,7 @@ win_height = 600
 win_width = 800
 win = pygame.display.set_mode((win_width, win_height))
 font = pygame.font.Font(os.path.join("assets", "fonts", 'unifont.ttf'), 16)
+big_font = pygame.font.Font(os.path.join("assets", "fonts", 'unifont.ttf'), 64)
 pygame.display.set_caption("Space Invaders by Zuvix")
 icon = pygame.image.load(os.path.join('assets', 'images', 'icon.png'))
 pygame.display.set_icon(icon)
@@ -456,14 +457,35 @@ def destroy_ufo():
     music_muted = False
 
 
+<<<<<<< Updated upstream
 #Initialize Game variables
+=======
+def redraw_menu():
+    intro_text = Text(big_font, GREEN, 200, 300)
+    intro_text.draw(win, "Space Invaders")
+    pygame.display.update()
+
+
+#initialize game variables
+>>>>>>> Stashed changes
 player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 3)
 run = True
 clock = pygame.time.Clock()
 bullets = []
 player_bullet = None
 direction = "right"
+<<<<<<< Updated upstream
 score = 0
+=======
+enemy_move_cycle = 0
+
+#game-menu-end control
+menu = True
+game = False
+run = True
+
+#game
+>>>>>>> Stashed changes
 current_time = 80
 enemy_move_cycle = 0
 game_speed = 130
@@ -476,11 +498,16 @@ ufo = None
 player_shot_count = 0
 random_ufo_trigger = 0
 # Gameloop
+<<<<<<< Updated upstream
 enemies = []
+=======
+
+>>>>>>> Stashed changes
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+<<<<<<< Updated upstream
     if not enemies:
         iteration += 1
         spawn_enemies(iteration)
@@ -501,5 +528,25 @@ while run:
         if (not ufo == None):
             handle_ufo()
     redraw_game_window()
+=======
+    if menu:
+        redraw_menu()
+    if game:
+        if not enemies:
+            iteration += 1
+            spawn_enemies(iteration)
+            current_time = 80
+            enemy_move_cycle = 1
+            game_speed = 130
+            direction = "right"
+            player_shot_count = 0
+            ufo_milestone = random.randrange(20, 30)
+        if (enemies):
+            handle_player_input()
+            move_enemies()
+            handle_bullets()
+            handle_ufo()
+        redraw_game_window()
+>>>>>>> Stashed changes
     clock.tick(60)
 pygame.quit()
