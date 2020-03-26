@@ -112,6 +112,7 @@ class CircleProjectile(Projectile):
         pygame.draw.circle(window, self.color, (self.x, self.y), self.radius)
 
 
+#basic bullet used by enemies and player
 class RectProjectile(Projectile):
     def __init__(self, width, height, *args):
         self.width = width
@@ -124,6 +125,7 @@ class RectProjectile(Projectile):
                          (int(self.x), int(self.y), self.width, self.height))
 
 
+#player class for the ship object
 class Player:
     player_image = img_p
     player_image = pygame.transform.scale(player_image, (42, 21))
@@ -140,6 +142,7 @@ class Player:
         window.blit(self.player_image, (self.x, self.y))
 
 
+#class for all enemies in spaceinvaders excluding ufo
 class Enemy:
     def __init__(self, x, y, width, height, score, color, image_1, image_2,
                  is_active, depth, row, min_shoot_cd, max_shoot_cd,
@@ -160,6 +163,7 @@ class Enemy:
         self.set_cd = 0
         self.color = color
 
+        #scale and set color of default img
         i1 = image_1
         i1 = pygame.transform.scale(i1, (28, 21))
         set_color(i1, color)
@@ -193,7 +197,7 @@ class Enemy:
 
     def shoot(self, bullets):
         if self.is_active == True:
-            #Initial cd value, so enemies dont shoot at the same interal
+            #Here we set initial cd value, so enemies dont shoot at the same interal
             if self.set_cd == 0:
                 self.set_cd = 60 + random.randrange(self.min_shoot_cd,
                                                     self.max_shoot_cd)
@@ -208,10 +212,8 @@ class Enemy:
                 self.set_cd = random.randrange(self.min_shoot_cd,
                                                self.max_shoot_cd)
 
-    def destroy(self):
-        print("destroyed", self.score)
 
-
+#class for ufo objects
 class Ufo:
     def __init__(self, x, y, width, height, vel, img):
         self.x = x
@@ -228,6 +230,7 @@ class Ufo:
         window.blit(self.img, (int(self.x), int(self.y)))
 
 
+#general class for text objects
 class Text:
     def __init__(self, font, color, x, y):
 
@@ -241,6 +244,7 @@ class Text:
         window.blit(text_obj, (self.x, self.y))
 
 
+#class for looping music
 class Music:
     def __init__(self):
         self.index = 0
@@ -252,6 +256,7 @@ class Music:
             self.index = 0
 
 
+#redraw all existing gameobjects
 def redraw_game_window():
     win.fill((0, 0, 0))
     player.draw(win)
@@ -268,6 +273,7 @@ def redraw_game_window():
     pygame.display.update()
 
 
+#handle player controlls and shooting
 def handle_player_input():
     global player_bullet
     global player_shot_count
@@ -286,6 +292,7 @@ def handle_player_input():
                                        True)
 
 
+#check if enemies are by wall and should change direction
 def handle_enemy_movement_direction():
     check_wall = False
     global direction
@@ -299,23 +306,29 @@ def handle_enemy_movement_direction():
     return check_wall
 
 
+#handle bullet collisions
 def handle_bullets():
     global player_bullet
     global score
     global game_speed
     global run
+
+    #move player bullet
     if player_bullet != None:
         if player_bullet.y > -5:
             player_bullet.y -= player_bullet.vel
         else:
             player_bullet = None
             player.can_fire = True
+
+    #bullets out of bounds
     for bullet in bullets:
         if bullet.y < win_height:
             bullet.y += bullet.vel
         else:
             bullets.pop(bullets.index(bullet))
 
+    #collisions with enemies
     for enemy in enemies:
         if player_bullet != None:
             if pygame.Rect(int(player_bullet.x), int(player_bullet.y),
@@ -326,12 +339,13 @@ def handle_bullets():
                 player_bullet = None
                 player.can_fire = True
                 score += enemy.score
-                enemy.destroy()
                 pygame.mixer.find_channel().play(enemy_death_sound)
                 game_speed -= 2
                 activate_next_enemy(enemy, enemies)
                 enemies.pop(enemies.index(enemy))
         enemy.shoot(bullets)
+
+    #collision with player
     for bullet in bullets:
         if pygame.Rect(int(bullet.x), int(bullet.y), bullet.width,
                        bullet.height).colliderect(
@@ -340,12 +354,14 @@ def handle_bullets():
             run = False
 
 
+#spawn enemies in waves
 def spawn_enemies(iter: int):
     global enemies
-    #OFFSET X,Y
     spawn_sound.play(-1)
+    #OFFSET X,Y
     x = 150
     y = 34 + 36 * iter
+    #spawn upper row
     for d in range(1):
         for i in range(11):
             enemies.append(
@@ -353,6 +369,7 @@ def spawn_enemies(iter: int):
                       img_c2, False, d, i, 250, 420, 4))
             clock.tick(20)
             redraw_game_window()
+    #spawn middle rows
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
@@ -360,6 +377,7 @@ def spawn_enemies(iter: int):
                       img_b2, False, d, i, 350, 700, 6))
             clock.tick(20)
             redraw_game_window()
+    #spawn lower rows
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
@@ -374,6 +392,7 @@ def spawn_enemies(iter: int):
     spawn_sound.stop()
 
 
+#when one enemy dies he enebles the enemy above him to shoot
 def activate_next_enemy(enemy_out: Enemy, enemies):
     if enemy_out.is_active == True:
         new_max_depth = -1
@@ -387,6 +406,7 @@ def activate_next_enemy(enemy_out: Enemy, enemies):
             new_enemy.is_active = True
 
 
+#move enemies depending on the speed of the game
 def move_enemies():
     global current_time
     global enemy_move_cycle
@@ -415,15 +435,16 @@ def move_enemies():
             enemy.move(direction, by_wall, vel)
 
 
+# create ufo object and change music
 def spawn_ufo():
     global ufo
-    global win
     global music_muted
     music_muted = True
     pygame.mixer.find_channel().play(ufo_sound, loops=100)
     ufo = Ufo(0, 40, 50, 22, 1.75, img_ufo)
 
 
+#control ufo behaviour and spawntime
 def handle_ufo():
     global ufo
     global player_bullet
@@ -456,6 +477,7 @@ def handle_ufo():
                 pygame.mixer.find_channel().play(ufo_kill_sounds[random_num])
 
 
+#destroys ufo and resets original music
 def destroy_ufo():
     global ufo
     global music_muted
@@ -464,27 +486,40 @@ def destroy_ufo():
     music_muted = False
 
 
-#Initialize Game variables
+#initialize game variables
 player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 3)
-run = True
 clock = pygame.time.Clock()
-bullets = []
+
+#bullets
 player_bullet = None
+bullets = []
+
+#enemies
+enemies = []
 direction = "right"
-score = 0
-current_time = 80
 enemy_move_cycle = 0
+
+#gamecontrol
+run = True
+current_time = 80
 game_speed = 130
+
+#score and wave
+score = 0
 iteration = 0
 score_text = Text(font, WHITE, 12, 12)
 level_text = Text(font, WHITE, 360, 12)
+
+#main music theme
 music_loop = Music()
 music_muted = False
+
+#ufo event
 ufo = None
 player_shot_count = 0
 ufo_milestone = 0
+
 # Gameloop
-enemies = []
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -496,7 +531,7 @@ while run:
         enemy_move_cycle = 1
         game_speed = 130
         direction = "right"
-        random_shot_count = 0
+        player_shot_count = 0
         ufo_milestone = random.randrange(20, 30)
     if (enemies):
         handle_player_input()
