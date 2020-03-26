@@ -23,16 +23,16 @@ spawn_sound = pygame.mixer.Sound(os.path.join('assets', 'nSounds',
                                               'spawn.wav'))
 ufo_sound = pygame.mixer.Sound(os.path.join('assets', 'nSounds', 'ufo.wav'))
 ufo_kill_sounds = []
-for i in range(1, 2):
+for i in range(1, 4):
     ufo_kill_sounds.append(
         pygame.mixer.Sound(
-            os.path.join('assets', 'nSounds', 'ufo_kill' + str(i) + ".wav")))
+            os.path.join('assets', 'nSounds', 'ufo_kill' + str(i) + '.wav')))
 track_sounds = []
 for i in range(1, 5):
     track_sounds.append(
         pygame.mixer.Sound(
             os.path.join('assets', 'nSounds',
-                         'fastinvader' + str(i) + ".wav")))
+                         'fastinvader' + str(i) + '.wav')))
     track_sounds[i - 1].set_volume(0.5)
 
 #Set volume for sounds
@@ -61,6 +61,7 @@ RED = pygame.Color(237, 28, 36)
 WHITE = pygame.Color(255, 255, 255)
 
 
+#function used to set color of surface
 def set_color(img, color):
     for x in range(img.get_width()):
         for y in range(img.get_height()):
@@ -68,6 +69,7 @@ def set_color(img, color):
             img.set_at((x, y), color)  # Set the color of the pixel.
 
 
+#class for all bullets
 class Projectile(object):
     def __init__(self, x, y, color, vel, is_enemy):
         self.x = x
@@ -85,6 +87,7 @@ class Projectile(object):
     def move(self):
         pass
 
+    #function used to make bullets look less static
     def horiznotal_move(self):
         if self.horizontal_direction == "right":
             if self.x < self.x_max:
@@ -98,6 +101,7 @@ class Projectile(object):
                 self.horizontal_direction = "right"
 
 
+#Maybe used sometime for a boss type event
 class CircleProjectile(Projectile):
     def __init__(self, radius, *args):
         self.radius = radius
@@ -441,7 +445,7 @@ def handle_ufo():
             possible_scores = (50, 100, 150)
             random_num = random.randrange(0, 3)
             score += possible_scores[random_num]
-            pygame.mixer.find_channel().play(ufo_kil_sounds[random_num])
+            pygame.mixer.find_channel().play(ufo_kill_sounds[random_num])
 
 
 def destroy_ufo():
