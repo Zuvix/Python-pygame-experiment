@@ -11,7 +11,7 @@ win_width = 800
 win = pygame.display.set_mode((win_width, win_height))
 font = pygame.font.Font(os.path.join("assets", "fonts", 'unifont.ttf'), 16)
 big_font = pygame.font.Font(os.path.join("assets", "fonts", 'unifont.ttf'), 64)
-pygame.display.set_caption("Space Invaders by Zuvix")
+pygame.display.set_caption("Pygame: Space Invaders")
 icon = pygame.image.load(os.path.join('assets', 'images', 'icon.png'))
 pygame.display.set_icon(icon)
 
@@ -35,6 +35,10 @@ for i in range(1, 5):
             os.path.join('assets', 'nSounds',
                          'fastinvader' + str(i) + '.wav')))
     track_sounds[i - 1].set_volume(0.5)
+menu_music = pygame.mixer.Sound(
+    os.path.join('assets', 'nSounds', 'menusong.ogg'))
+start_game_sound = pygame.mixer.Sound(
+    os.path.join('assets', 'nSounds', 'start_game.wav'))
 
 #Set volume for sounds
 bullet_sound.set_volume(0.6)
@@ -401,6 +405,7 @@ def spawn_enemies(iter: int):
         if enemy.depth == 4:
             enemy.is_active = True
     spawn_sound.stop()
+    clock.tick(3)
 
 
 #when one enemy dies he enebles the enemy above him to shoot
@@ -464,7 +469,7 @@ def handle_ufo():
     global music_muted
     global player_shot_count
     if ufo == None:
-        if ufo_milestone == player_shot_count:
+        if ufo_milestone == player_shot_count and enemies > 4:
             spawn_ufo()
             player_shot_count = 0
             ufo_milestione = random.randrange(12, 25)
@@ -499,12 +504,14 @@ def destroy_ufo():
 
 def redraw_menu():
     global state
-    intro_text = Text(font, WHITE, 270, win_height - 50)
+    win.fill((0, 0, 0))
+    intro_text = Text(font, WHITE, 272, win_height - 60)
+    controls_text = Text(font, WHITE, 220, win_height - 130)
+    shoot_text = Text(font, WHITE, 460, win_height - 130)
     value1_text = Text(font, BLUE, 262, 280)
     value2_text = Text(font, ORANGE, 492, 280)
     value3_text = Text(font, PURPLE, 262, 400)
     value4_text = Text(font, RED, 492, 400)
-    win.fill((0, 0, 0))
     if state == 1:
         state = 0
         intro_text.color = GREEN
@@ -519,12 +526,14 @@ def redraw_menu():
         win.blit(img_b2, (250, 360))
         win.blit(img_c2, (480, 240))
         win.blit(img_ufo, (480, 365))
+    controls_text.draw(win, "Move: Arrows")
+    shoot_text.draw(win, "Shoot: Space")
     value1_text.draw(win, "10p")
     value2_text.draw(win, "30p")
     value3_text.draw(win, "20p")
     value4_text.draw(win, "???")
     intro_text.draw(win, "Hold Space to start the race!")
-    win.blit(img_title, (210, 30))
+    win.blit(img_title, (206, 30))
     pygame.display.update()
 
 
@@ -568,18 +577,21 @@ player_shot_count = 0
 ufo_milestone = 0
 
 # Gameloop
-
+menu_music.play()
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
     if menu:
         redraw_menu()
-        key = pygame.key.get_pressed()
-        if key[pygame.K_SPACE]:
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
             menu = False
             game = True
-        clock.tick(4)
+            menu_music.stop()
+            start_game_sound.play()
+            clock.tick(1)
+        clock.tick(4.4)
     if game:
         if not enemies:
             iteration += 1
