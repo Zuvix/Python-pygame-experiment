@@ -34,17 +34,20 @@ for i in range(1, 5):
         pygame.mixer.Sound(
             os.path.join('assets', 'nSounds',
                          'fastinvader' + str(i) + '.wav')))
-    track_sounds[i - 1].set_volume(0.5)
+    track_sounds[i - 1].set_volume(0.4)
 menu_music = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'menusong.ogg'))
 start_game_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'start_game.wav'))
+enemy_laser_sound = pygame.mixer.Sound(
+    os.path.join('assets', 'nSounds', 'enemy_laser.wav'))
 
 #Set volume for sounds
-bullet_sound.set_volume(0.6)
-enemy_death_sound.set_volume(0.2)
+bullet_sound.set_volume(0.4)
+enemy_death_sound.set_volume(0.15)
 spawn_sound.set_volume(0.5)
 ufo_sound.set_volume(0.3)
+enemy_laser_sound.set_volume(0.3)
 
 #Load Images
 img_title = pygame.image.load(os.path.join('assets', 'images', 'title.png'))
@@ -223,6 +226,7 @@ class Enemy:
                                             self.y + self.height, self.color,
                                             self.bullet_speed, True)
                 bullets.append(new_bullet)
+                pygame.mixer.find_channel().play(enemy_laser_sound)
                 self.cd = 0
                 self.set_cd = random.randrange(self.min_shoot_cd,
                                                self.max_shoot_cd)
@@ -374,13 +378,13 @@ def spawn_enemies(iter: int):
     global enemies
     spawn_sound.play(-1)
     #OFFSET X,Y
-    x = 150
+    x = 130
     y = 34 + 36 * iter
     #spawn upper row
     for d in range(1):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 30, ORANGE, img_c1,
+                Enemy(x + i * 48, y + d * 32 + 8, 32, 24, 30, ORANGE, img_c1,
                       img_c2, False, d, i, 250, 420, 4))
             clock.tick(20)
             redraw_game_window()
@@ -388,7 +392,7 @@ def spawn_enemies(iter: int):
     for d in range(1, 3):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 20, PURPLE, img_b1,
+                Enemy(x + i * 48, y + d * 32 + 8, 32, 24, 20, PURPLE, img_b1,
                       img_b2, False, d, i, 350, 700, 6))
             clock.tick(20)
             redraw_game_window()
@@ -396,7 +400,7 @@ def spawn_enemies(iter: int):
     for d in range(3, 5):
         for i in range(11):
             enemies.append(
-                Enemy(x + i * 44, y + d * 32 + 8, 32, 24, 10,
+                Enemy(x + i * 48, y + d * 32 + 8, 32, 24, 10,
                       pygame.Color(0, 100, 255), img_a1, img_a2, False, d, i,
                       350, 700, 4))
             clock.tick(20)
@@ -469,7 +473,7 @@ def handle_ufo():
     global music_muted
     global player_shot_count
     if ufo == None:
-        if ufo_milestone == player_shot_count and enemies > 4:
+        if ufo_milestone == player_shot_count and len(enemies) > 4:
             spawn_ufo()
             player_shot_count = 0
             ufo_milestione = random.randrange(12, 25)
