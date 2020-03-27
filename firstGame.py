@@ -47,7 +47,7 @@ bullet_sound.set_volume(0.4)
 enemy_death_sound.set_volume(0.15)
 spawn_sound.set_volume(0.5)
 ufo_sound.set_volume(0.3)
-enemy_laser_sound.set_volume(0.3)
+enemy_laser_sound.set_volume(0.4)
 
 #Load Images
 img_title = pygame.image.load(os.path.join('assets', 'images', 'title.png'))
