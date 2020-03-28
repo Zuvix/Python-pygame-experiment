@@ -436,7 +436,7 @@ def spawn_enemies(iter: int):
 def activate_next_enemy(enemy_out: Enemy, enemies):
     if enemy_out.is_active == True:
         new_max_depth = -1
-        new_enemy: Enemy = None
+        new_enemy = None
         for enemy in enemies:
             if enemy.row == enemy_out.row and enemy.depth < enemy_out.depth:
                 if enemy.depth > new_max_depth:
