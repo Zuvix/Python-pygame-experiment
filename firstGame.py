@@ -45,6 +45,8 @@ enemy_laser_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'enemy_laser.wav'))
 explosion_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'explosion.wav'))
+gameover_sound = pygame.mixer.Sound(
+    os.path.join('assets', 'nSounds', 'game_over.ogg'))
 #Set volume for sounds
 bullet_sound.set_volume(0.4)
 enemy_death_sound.set_volume(0.15)
@@ -206,7 +208,7 @@ class Enemy:
         elif move_dir == "left":
             self.x -= vel
         if self.y + self.height + 3 >= win_height:
-            pygame.quit()
+            destroy_player()
 
     def change_anim(self):
         if self.image_id == 1:
@@ -571,11 +573,12 @@ def change_event(next_event):
     global state
     global player_bullet
     global bullets
+    global iteration
     if next_event == "menu":
         end_music.stop()
         menu_music.play(-1)
         score = 0
-        player_bullet = None
+        iteration = 0
         bullets = []
         current_event = "menu"
     if next_event == "game":
@@ -587,6 +590,7 @@ def change_event(next_event):
         state = 0
         current_event = "end"
         enemies = []
+        pygame.mixer.find_channel().play(gameover_sound)
         end_music.play(-1)
 
 
@@ -600,8 +604,12 @@ def show_number(number, desired_units, fill_chareacter):
 
 
 def destroy_player():
+    global player_bullet
+    player_bullet = None
+    player.can_fire = True
     pygame.mixer.find_channel().play(explosion_sound)
-    clock.tick(2)
+    clock.tick(1)
+    player_bullet
     change_event("end")
 
 
