@@ -394,7 +394,7 @@ def handle_bullets():
 
 
 #spawn enemies in waves
-def spawn_enemies(iter: int):
+def spawn_enemies(iter):
     global enemies
     spawn_sound.play(-1)
     #OFFSET X,Y
