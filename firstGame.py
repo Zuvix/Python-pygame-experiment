@@ -18,16 +18,23 @@ pygame.display.set_icon(icon)
 #Load Sound Assets
 bullet_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'shoot.wav'))
+
+##enemy sounds
+enemy_laser_sound = pygame.mixer.Sound(
+    os.path.join('assets', 'nSounds', 'enemy_laser.wav'))
 enemy_death_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'invaderkilled.wav'))
 spawn_sound = pygame.mixer.Sound(os.path.join('assets', 'nSounds',
                                               'spawn.wav'))
+##ufo sounds
 ufo_sound = pygame.mixer.Sound(os.path.join('assets', 'nSounds', 'ufo.wav'))
 ufo_kill_sounds = []
 for i in range(1, 4):
     ufo_kill_sounds.append(
         pygame.mixer.Sound(
             os.path.join('assets', 'nSounds', 'ufo_kill' + str(i) + '.wav')))
+
+##background music during gamerun
 track_sounds = []
 for i in range(1, 5):
     track_sounds.append(
@@ -35,18 +42,23 @@ for i in range(1, 5):
             os.path.join('assets', 'nSounds',
                          'fastinvader' + str(i) + '.wav')))
     track_sounds[i - 1].set_volume(0.4)
+
+##menu sounds
 menu_music = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'menusong.ogg'))
-end_music = pygame.mixer.Sound(os.path.join('assets', 'nSounds',
-                                            'endsong.ogg'))
 start_game_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'start_game.wav'))
 enemy_laser_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'enemy_laser.wav'))
+
+##gamover sounds
 explosion_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'explosion.wav'))
 gameover_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'game_over.ogg'))
+end_music = pygame.mixer.Sound(os.path.join('assets', 'nSounds',
+                                            'endsong.ogg'))
+
 #Set volume for sounds
 bullet_sound.set_volume(0.4)
 enemy_death_sound.set_volume(0.15)
@@ -435,7 +447,7 @@ def spawn_enemies(iter):
 
 
 #when one enemy dies he enebles the enemy above him to shoot
-def activate_next_enemy(enemy_out: Enemy, enemies):
+def activate_next_enemy(enemy_out, enemies):
     if enemy_out.is_active == True:
         new_max_depth = -1
         new_enemy = None
