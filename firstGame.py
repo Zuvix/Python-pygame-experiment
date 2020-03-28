@@ -37,11 +37,14 @@ for i in range(1, 5):
     track_sounds[i - 1].set_volume(0.4)
 menu_music = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'menusong.ogg'))
+end_music = pygame.mixer.Sound(os.path.join('assets', 'nSounds',
+                                            'endsong.ogg'))
 start_game_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'start_game.wav'))
 enemy_laser_sound = pygame.mixer.Sound(
     os.path.join('assets', 'nSounds', 'enemy_laser.wav'))
-
+explosion_sound = pygame.mixer.Sound(
+    os.path.join('assets', 'nSounds', 'explosion.wav'))
 #Set volume for sounds
 bullet_sound.set_volume(0.4)
 enemy_death_sound.set_volume(0.15)
@@ -54,8 +57,8 @@ img_title = pygame.image.load(os.path.join('assets', 'images', 'title.png'))
 img_p = pygame.image.load(os.path.join('assets', 'images', 'Ship.png'))
 img_a1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderA1.png'))
 img_a2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderA2.png'))
-img_b1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderB1.png'))
-img_b2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderB2.png'))
+img_b1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderB2.png'))
+img_b2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderB1.png'))
 img_c1 = pygame.image.load(os.path.join('assets', 'images', 'InvaderC1.png'))
 img_c2 = pygame.image.load(os.path.join('assets', 'images', 'InvaderC2.png'))
 img_ufo = pygame.image.load(os.path.join('assets', 'images', 'ufo.png'))
@@ -214,7 +217,7 @@ class Enemy:
             self.enemy_image = self.enemy_image1
 
     def shoot(self, bullets):
-        if self.is_active == True:
+        if self.is_active == True and self.y < win_height - 50:
             #Here we set initial cd value, so enemies dont shoot at the same interal
             if self.set_cd == 0:
                 self.set_cd = 60 + random.randrange(self.min_shoot_cd,
@@ -275,6 +278,15 @@ class Music:
             self.index = 0
 
 
+class Stats:
+    def __init__(self):
+        self.a_killed = 0
+        self.b_killed = 0
+        self.c_killed = 0
+        self.ufo_killed = 0
+        self.ufo_colledted_points = 0
+
+
 #redraw all existing gameobjects
 def redraw_game_window():
     win.fill((0, 0, 0))
@@ -331,6 +343,7 @@ def handle_bullets():
     global score
     global game_speed
     global run
+    global stats
 
     #move player bullet
     if player_bullet != None:
@@ -361,6 +374,12 @@ def handle_bullets():
                 pygame.mixer.find_channel().play(enemy_death_sound)
                 game_speed -= 2
                 activate_next_enemy(enemy, enemies)
+                if enemy.score == 10:
+                    stats.a_killed += 1
+                if enemy.score == 20:
+                    stats.b_killed += 1
+                if enemy.score == 30:
+                    stats.c_killed += 1
                 enemies.pop(enemies.index(enemy))
         enemy.shoot(bullets)
 
@@ -370,7 +389,8 @@ def handle_bullets():
                        bullet.height).colliderect(
                            pygame.Rect(int(player.x), int(player.y),
                                        player.width, player.height)):
-            run = False
+            bullets.pop(bullets.index(bullet))
+            destroy_player()
 
 
 #spawn enemies in waves
@@ -472,6 +492,7 @@ def handle_ufo():
     global score
     global music_muted
     global player_shot_count
+    global stats
     if ufo == None:
         if ufo_milestone == player_shot_count and len(enemies) > 4:
             spawn_ufo()
@@ -489,11 +510,13 @@ def handle_ufo():
                                pygame.Rect(int(ufo.x), int(ufo.y), ufo.width,
                                            ufo.height)):
                 destroy_ufo()
+                stats.ufo_killed += 1
                 player_bullet = None
                 player.can_fire = True
                 possible_scores = (50, 100, 150)
                 random_num = random.randrange(0, 3)
                 score += possible_scores[random_num]
+                stats.ufo_colledted_points += possible_scores[random_num]
                 pygame.mixer.find_channel().play(ufo_kill_sounds[random_num])
 
 
@@ -541,6 +564,99 @@ def redraw_menu():
     pygame.display.update()
 
 
+def change_event(next_event):
+    global current_event
+    global score
+    global enemies
+    global state
+    global player_bullet
+    global bullets
+    if next_event == "menu":
+        end_music.stop()
+        menu_music.play(-1)
+        score = 0
+        player_bullet = None
+        bullets = []
+        current_event = "menu"
+    if next_event == "game":
+        current_event = "game"
+        menu_music.stop()
+        start_game_sound.play()
+        clock.tick(1)
+    if next_event == "end":
+        state = 0
+        current_event = "end"
+        enemies = []
+        end_music.play(-1)
+
+
+def show_number(number, desired_units, fill_chareacter):
+    current_units = len(str(number))
+    needed_units = desired_units - current_units
+    if needed_units > 0:
+        return needed_units * fill_chareacter + str(number)
+    else:
+        return number
+
+
+def destroy_player():
+    pygame.mixer.find_channel().play(explosion_sound)
+    clock.tick(2)
+    change_event("end")
+
+
+def redraw_end_screen():
+    global state
+    img_end_a1 = pygame.transform.scale(img_a1, (28, 21))
+    img_end_b1 = pygame.transform.scale(img_b1, (28, 21))
+    img_end_c1 = pygame.transform.scale(img_c1, (28, 21))
+    gameover_text = Text(big_font, WHITE, 250, 20)
+    kills_text = Text(font, WHITE, 292, 90 + 60 * state)
+    equal_text = Text(font, WHITE, 360 + 60, 90 + 60 * state)
+    value_text = Text(font, WHITE, 385 + 60, 90 + 60 * state)
+    final_text = Text(font, WHITE, 290, 390)
+    final_score = Text(font, WHITE, 421, 390)
+    goodbye_text = Text(font, BLUE, 515, win_height - 40)
+    restart_text = Text(font, YELLOW, 50, win_height - 40)
+
+    if state == 0:
+        win.fill((0, 0, 0))
+        gameover_text.draw(win, "Game Over")
+    if state == 1:
+        win.blit(img_end_a1, (365, 150))
+        kills_text.draw(win, show_number(stats.a_killed, 3, "0") + "  x")
+        equal_text.draw(win, "=")
+        value_text.draw(win, show_number(stats.a_killed * 10, 5, "0"))
+    if state == 2:
+        kills_text.draw(win, show_number(stats.b_killed, 3, "0") + "  x")
+        win.blit(img_end_b1, (365, 210))
+        equal_text.draw(win, "=")
+        value_text.draw(win, show_number(stats.b_killed * 20, 5, "0"))
+    if state == 3:
+        kills_text.draw(win, show_number(stats.c_killed, 3, "0") + "  x")
+        win.blit(img_end_c1, (365, 270))
+        equal_text.draw(win, "=")
+        value_text.draw(win, show_number(stats.c_killed * 30, 5, "0"))
+    if state == 4:
+        kills_text.color = RED
+        equal_text.color = RED
+        value_text.color = RED
+        kills_text.draw(win, show_number(stats.ufo_killed, 3, "0") + "  x")
+        win.blit(img_ufo, (355, 325))
+        equal_text.draw(win, "=")
+        value_text.draw(win, show_number(stats.ufo_colledted_points, 5, "0"))
+    if state == 5:
+        pygame.draw.rect(win, WHITE, (280, 370, 220, 1))
+    if state == 6:
+        final_text.draw(win, "Total:")
+        final_score.draw(win, show_number(score, 8, " "))
+    if state == 8:
+        goodbye_text.draw(win, "Better luck in another galaxy.")
+        restart_text.draw(win, "Hold R to return Home!")
+    state += 1
+    pygame.display.update()
+
+
 #initialize game variables
 player = Player(win_width // 2 - 45, win_height - 24, 45, 24, 3)
 clock = pygame.time.Clock()
@@ -555,9 +671,9 @@ direction = "right"
 enemy_move_cycle = 0
 
 #game-menu-end control
-menu = True
-game = False
+current_event = "end"
 run = True
+
 #game
 current_time = 80
 game_speed = 130
@@ -575,28 +691,27 @@ level_text = Text(font, WHITE, 360, 12)
 music_loop = Music()
 music_muted = False
 
+#stats
+stats = Stats()
+
 #ufo event
 ufo = None
 player_shot_count = 0
 ufo_milestone = 0
 
 # Gameloop
-menu_music.play()
+change_event("menu")
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-    if menu:
+    if current_event == "menu":
         redraw_menu()
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE]:
-            menu = False
-            game = True
-            menu_music.stop()
-            start_game_sound.play()
-            clock.tick(1)
-        clock.tick(4.4)
-    if game:
+            change_event("game")
+        clock.tick(4)
+    if current_event == "game":
         if not enemies:
             iteration += 1
             spawn_enemies(iteration)
@@ -613,4 +728,10 @@ while run:
             handle_ufo()
         redraw_game_window()
         clock.tick(60)
+    if current_event == "end":
+        redraw_end_screen()
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            change_event("menu")
+        clock.tick(2)
 pygame.quit()
